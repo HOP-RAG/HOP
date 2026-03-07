@@ -1,0 +1,97 @@
+name: Deploy to DigitalOcean
+
+on:
+  push:
+    branches:
+      - main
+
+jobs:
+  deploy:
+    runs-on: ubuntu-latest
+
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v3
+
+      - name: Get version from git tag
+        id: version
+        run: |
+          VERSION=$(git describe --tags --always 2>/dev/null || echo "v$(date +%Y%m%d-%H%M%S)")
+          echo "version=$VERSION" >> $GITHUB_OUTPUT
+
+      - name: Deploy to DigitalOcean
+        env:
+          DEPLOY_HOST: ${{ secrets.DROPLET_IP }}
+          DEPLOY_USER: root
+          DEPLOY_KEY: ${{ secrets.DROPLET_SSH_KEY }}
+          VERSION: ${{ steps.version.outputs.version }}
+        run: |
+          # Setup SSH
+          mkdir -p ~/.ssh
+          echo "$DEPLOY_KEY" > ~/.ssh/deploy_key
+          chmod 600 ~/.ssh/deploy_key
+          ssh-keyscan -H $DEPLOY_HOST >> ~/.ssh/known_hosts
+
+          # SSH into droplet and deploy
+          ssh -i ~/.ssh/deploy_key $DEPLOY_USER@$DEPLOY_HOST << 'EOF'
+          set -e
+          cd /opt/onyx
+
+          echo "=== Deploying version $VERSION ==="
+
+          # Pull latest code
+          echo "Pulling latest code..."
+          git fetch origin main
+          git reset --hard origin/main
+
+          # Build images with version tag
+          echo "Building Docker images..."
+          sudo docker compose build \
+            --build-arg IMAGE_TAG=$VERSION \
+            api_server \
+            web_server \
+            background
+
+          # Stop old services
+          echo "Stopping services..."
+          sudo docker compose down -t 30
+
+          # Start new services
+          echo "Starting services..."
+          sudo docker compose up -d
+
+          # Wait for services
+          echo "Waiting for services to start..."
+          sleep 10
+
+          # Health check
+          echo "Running health checks..."
+          if curl -f http://localhost:8080/health > /dev/null; then
+            echo "✓ Backend API is healthy"
+          else
+            echo "✗ Backend API health check failed"
+            exit 1
+          fi
+
+          if curl -f http://localhost:3000 > /dev/null; then
+            echo "✓ Frontend is responding"
+          else
+            echo "✗ Frontend health check failed"
+            exit 1
+          fi
+
+          echo "=== Deployment successful (version: $VERSION) ==="
+          EOF
+
+      - name: Deployment notification
+        if: success()
+        run: |
+          echo "✅ Deployment successful!"
+          echo "Version: ${{ steps.version.outputs.version }}"
+          echo "Deployed to: https://klugermax.com"
+
+      - name: Deployment failed notification
+        if: failure()
+        run: |
+          echo "❌ Deployment failed!"
+          exit 1
