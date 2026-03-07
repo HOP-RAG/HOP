@@ -52,6 +52,11 @@ jobs:
           echo "Stopping services..."
           sudo docker compose down -t 30
 
+          # Clean up any orphaned containers (e.g., old nginx proxy)
+          echo "Cleaning up orphaned containers..."
+          sudo docker stop onyx-proxy 2>/dev/null || true
+          sudo docker rm onyx-proxy 2>/dev/null || true
+
           # Start new services
           echo "Starting services..."
           sudo docker compose up -d
