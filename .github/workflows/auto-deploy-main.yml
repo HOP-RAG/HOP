@@ -1,9 +1,12 @@
-name: Auto-Deploy on Main
+name: Auto-Deploy on Main (DISABLED - Use deploy.yml instead)
 
 on:
-  push:
-    branches:
-      - main
+  # DISABLED: This workflow conflicts with deploy.yml
+  # Both trigger on push to main. Use deploy.yml for sandbox deployment.
+  # To re-enable, change this to:
+  # push:
+  #   branches:
+  #     - main
   workflow_dispatch:
 
 env:
