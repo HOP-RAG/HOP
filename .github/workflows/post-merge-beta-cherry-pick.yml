@@ -1,9 +1,11 @@
 name: Post-Merge Beta Cherry-Pick
 
 on:
-  push:
-    branches:
-      - main
+  # DISABLED for fork: Only for upstream beta release management
+  # push:
+  #   branches:
+  #     - main
+  workflow_dispatch:
 
 permissions:
   contents: read

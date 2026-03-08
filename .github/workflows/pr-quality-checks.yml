@@ -6,9 +6,11 @@ concurrency:
 on:
   merge_group:
   pull_request: null
+  # DISABLED for fork: Only run on version tags, not every main push
+  # push:
+  #   branches:
+  #     - main
   push:
-    branches:
-      - main
     tags:
       - "v*.*.*"
 

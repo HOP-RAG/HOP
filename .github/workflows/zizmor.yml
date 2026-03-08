@@ -1,8 +1,9 @@
 name: Run Zizmor
 
 on:
-  push:
-    branches: ["main"]
+  # DISABLED for fork: Not needed for sandbox
+  # push:
+  #   branches: ["main"]
   pull_request:
     branches: ["**"]
     paths:

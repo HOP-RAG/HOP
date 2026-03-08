@@ -1,9 +1,11 @@
 name: Release Onyx Helm Charts
 
 on:
-  push:
-    branches:
-      - main
+  # DISABLED for fork: Only run on version tags, not every main push
+  # push:
+  #   branches:
+  #     - main
+  workflow_dispatch:
 
 permissions: write-all
 
