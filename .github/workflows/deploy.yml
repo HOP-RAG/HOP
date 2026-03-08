@@ -71,7 +71,7 @@ jobs:
           sudo docker compose ps
 
           echo "Backend service logs:"
-          sudo docker compose logs backend --tail=50
+          sudo docker compose logs api_server --tail=50
 
           max_retries=30
           retry_count=0
@@ -91,7 +91,7 @@ jobs:
           if [ $retry_count -eq $max_retries ]; then
             echo "✗ Backend API health check failed after $max_retries attempts"
             echo "Final backend logs:"
-            sudo docker compose logs backend --tail=100
+            sudo docker compose logs api_server --tail=100
             exit 1
           fi
 
@@ -100,7 +100,7 @@ jobs:
           else
             echo "✗ Frontend health check failed"
             echo "Frontend logs:"
-            sudo docker compose logs web --tail=50
+            sudo docker compose logs web_server --tail=50
             exit 1
           fi
 

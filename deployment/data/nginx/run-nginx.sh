@@ -31,6 +31,9 @@ else
   echo "# Empty file - MCP server is disabled" > /etc/nginx/conf.d/mcp.conf.inc
 fi
 
+# Remove carriage returns if present (handles dos2unix on alpine)
+sed -i 's/\r$//' /etc/nginx/conf.d/run-nginx.sh 2>/dev/null || true
+
 # wait for the api_server to be ready
 echo "Waiting for API server to boot up; this may take a minute or two..."
 echo "If this takes more than ~5 minutes, check the logs of the API server container for errors with the following command:"
