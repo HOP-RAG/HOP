@@ -120,4 +120,4 @@ echo "$(date '+%Y-%m-%d %H:%M:%S') - [nginx] Nginx config test passed"
 echo "$(date '+%Y-%m-%d %H:%M:%S') - [nginx] Starting nginx in foreground..."
 
 # Start nginx and reload every 6 hours
-while :; do sleep 6h & wait; nginx -s reload; done & nginx -g "daemon off;"
+while :; do sleep 21600 & wait; nginx -s reload; done & nginx -g "daemon off;"
