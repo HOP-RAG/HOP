@@ -63,16 +63,21 @@ jobs:
 
           # Stop old services with backup
           echo "Stopping services..."
-          sudo docker compose down -t 30
+          sudo docker compose down -t 30 --remove-orphans
 
-          # Clean up any orphaned containers (e.g., old nginx proxy)
-          echo "Cleaning up orphaned containers..."
+          # Force-kill any lingering containers holding ports
+          echo "Force-cleaning lingering containers..."
           sudo docker stop onyx-proxy 2>/dev/null || true
-          sudo docker rm onyx-proxy 2>/dev/null || true
+          sudo docker rm -f onyx-proxy 2>/dev/null || true
+          sudo docker ps -a | grep hop- | awk '{print $1}' | xargs -r sudo docker rm -f 2>/dev/null || true
+
+          # Wait for ports to be released
+          echo "Waiting for ports to be released..."
+          sleep 5
 
           # Start new services
           echo "Starting services..."
-          sudo docker compose up -d
+          sudo docker compose up -d --remove-orphans
 
           # Wait for services
           echo "Waiting for services to start..."
