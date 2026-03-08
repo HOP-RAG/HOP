@@ -63,18 +63,31 @@ jobs:
 
           # Wait for services
           echo "Waiting for services to start..."
-          sleep 10
+          sleep 15
 
-          # Health check
+          # Health check with retries
           echo "Running health checks..."
-          if curl -f http://localhost:8080/health > /dev/null; then
-            echo "✓ Backend API is healthy"
-          else
-            echo "✗ Backend API health check failed"
+          max_retries=30
+          retry_count=0
+
+          while [ $retry_count -lt $max_retries ]; do
+            if curl -f http://localhost:8080/health > /dev/null 2>&1; then
+              echo "✓ Backend API is healthy"
+              break
+            fi
+            retry_count=$((retry_count + 1))
+            if [ $retry_count -lt $max_retries ]; then
+              echo "Backend not ready yet, retrying... ($retry_count/$max_retries)"
+              sleep 2
+            fi
+          done
+
+          if [ $retry_count -eq $max_retries ]; then
+            echo "✗ Backend API health check failed after $max_retries attempts"
             exit 1
           fi
 
-          if curl -f http://localhost:3000 > /dev/null; then
+          if curl -f http://localhost:3000 > /dev/null 2>&1; then
             echo "✓ Frontend is responding"
           else
             echo "✗ Frontend health check failed"
