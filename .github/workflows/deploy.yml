@@ -71,9 +71,30 @@ jobs:
           sudo docker rm -f onyx-proxy 2>/dev/null || true
           sudo docker ps -a | grep hop- | awk '{print $1}' | xargs -r sudo docker rm -f 2>/dev/null || true
 
-          # Wait for ports to be released
+          # Also clean up any dangling containers from previous deployments
+          echo "Removing any remaining containers..."
+          sudo docker container prune -f 2>/dev/null || true
+
+          # Wait longer for ports to fully release (network namespace cleanup can take time)
           echo "Waiting for ports to be released..."
-          sleep 5
+          max_wait=30
+          wait_count=0
+          while [ $wait_count -lt $max_wait ]; do
+            if ! sudo ss -tlnp 2>/dev/null | grep -q ":80 "; then
+              echo "✓ Port 80 is free, proceeding with startup"
+              break
+            fi
+            wait_count=$((wait_count + 1))
+            if [ $wait_count -eq $max_wait ]; then
+              echo "✗ Port 80 still in use after $max_wait seconds"
+              echo "Processes using port 80:"
+              sudo ss -tlnp 2>/dev/null | grep ":80 " || true
+              echo "All containers:"
+              sudo docker ps -a || true
+            fi
+            echo "  Port 80 still in use, waiting... ($wait_count/$max_wait)"
+            sleep 1
+          done
 
           # Start new services
           echo "Starting services..."
