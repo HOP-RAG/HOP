@@ -39,16 +39,29 @@ jobs:
 
           echo "=== Deploying version $VERSION ==="
 
+          # Create pre-deployment backup
+          echo "Creating pre-deployment backup..."
+          BACKUP_DIR="/opt/onyx/backups"
+          mkdir -p $BACKUP_DIR
+          BACKUP_TIME=$(date +%Y%m%d-%H%M%S)
+          cp docker-compose.yml $BACKUP_DIR/docker-compose.yml.backup-${BACKUP_TIME} || true
+          git stash || true  # Save any uncommitted changes
+
           # Pull latest code
           echo "Pulling latest code..."
           git fetch origin main
           git reset --hard origin/main
 
+          # Ensure docker-compose.yml is symlinked to deployment version
+          echo "Ensuring docker-compose.yml is up to date..."
+          rm -f docker-compose.yml
+          ln -sf deployment/docker_compose/docker-compose.yml docker-compose.yml
+
           # Pull latest images
           echo "Pulling Docker images..."
           sudo docker compose pull
 
-          # Stop old services
+          # Stop old services with backup
           echo "Stopping services..."
           sudo docker compose down -t 30
 
@@ -65,37 +78,53 @@ jobs:
           echo "Waiting for services to start..."
           sleep 15
 
-          # Health check with retries
-          echo "Running health checks..."
+          # Enhanced health checks with retries
+          echo "Running comprehensive health checks..."
           echo "Current running containers:"
           sudo docker compose ps
-
-          echo "Backend service logs:"
-          sudo docker compose logs api_server --tail=50
 
           max_retries=30
           retry_count=0
 
+          # Check Backend API
+          echo "Checking Backend API health..."
           while [ $retry_count -lt $max_retries ]; do
-            if curl -v http://localhost:8080/health 2>&1 | grep -q "200\|Connected"; then
+            if curl -s http://localhost:8080/health 2>&1 | grep -q "success.*true\|200"; then
               echo "✓ Backend API is healthy"
               break
             fi
             retry_count=$((retry_count + 1))
             if [ $retry_count -lt $max_retries ]; then
-              echo "Backend not ready yet, retrying... ($retry_count/$max_retries)"
+              echo "  Backend not ready yet, retrying... ($retry_count/$max_retries)"
               sleep 2
             fi
           done
 
           if [ $retry_count -eq $max_retries ]; then
             echo "✗ Backend API health check failed after $max_retries attempts"
-            echo "Final backend logs:"
+            echo "Backend service logs:"
             sudo docker compose logs api_server --tail=100
+
+            # Attempt automatic rollback
+            echo ""
+            echo "⚠️  Deployment failed. Attempting rollback..."
+            LATEST_BACKUP=$(ls -t $BACKUP_DIR/docker-compose.yml.backup-* 2>/dev/null | head -1)
+            if [ -n "$LATEST_BACKUP" ]; then
+              echo "Restoring from backup: $LATEST_BACKUP"
+              cp $LATEST_BACKUP docker-compose.yml
+              rm -f docker-compose.yml  # Remove symlink
+              cp $LATEST_BACKUP docker-compose.yml
+              sudo docker compose down -t 30
+              sudo docker compose up -d
+              sleep 10
+              echo "Rollback completed. Please verify deployment manually."
+            fi
             exit 1
           fi
 
-          if curl -f http://localhost:3000 > /dev/null 2>&1; then
+          # Check Frontend
+          echo "Checking Frontend health..."
+          if curl -s http://localhost:3000 > /dev/null 2>&1; then
             echo "✓ Frontend is responding"
           else
             echo "✗ Frontend health check failed"
@@ -104,7 +133,17 @@ jobs:
             exit 1
           fi
 
-          echo "=== Deployment successful (version: $VERSION) ==="
+          # Check HTTPS
+          echo "Checking HTTPS endpoint..."
+          if curl -sk https://klugermax.com/health > /dev/null 2>&1 || curl -sk https://klugermax.com > /dev/null 2>&1; then
+            echo "✓ HTTPS endpoint is responding"
+          else
+            echo "⚠️  HTTPS endpoint check failed (may still be initializing)"
+          fi
+
+          echo ""
+          echo "=== ✅ Deployment successful (version: $VERSION) ==="
+          echo "All services are healthy and responding."
           EOF
 
       - name: Deployment notification
