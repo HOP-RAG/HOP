@@ -1,5 +1,12 @@
 set -e
 
+# Print startup info
+echo "[nginx] Starting nginx configuration script..."
+echo "[nginx] Arguments: $@"
+echo "[nginx] PWD: $(pwd)"
+echo "[nginx] Available files in /etc/nginx/conf.d:"
+ls -la /etc/nginx/conf.d/ 2>/dev/null || echo "[nginx] ERROR: Cannot list /etc/nginx/conf.d"
+
 # fill in the template
 export ONYX_BACKEND_API_HOST="${ONYX_BACKEND_API_HOST:-api_server}"
 export ONYX_WEB_SERVER_HOST="${ONYX_WEB_SERVER_HOST:-web_server}"
