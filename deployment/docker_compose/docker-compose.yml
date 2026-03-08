@@ -475,7 +475,7 @@ services:
     # does not receive any traffic
     # PRODUCTION: Change to app.conf.template.prod for production nginx config
     entrypoint: ["/bin/sh", "-c"]
-    command: ["/etc/nginx/conf.d/run-nginx.sh app.conf.template"]
+    command: ["sh /etc/nginx/conf.d/run-nginx.sh app.conf.template"]
 
   cache:
     image: redis:7.4-alpine
