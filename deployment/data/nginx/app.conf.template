@@ -33,6 +33,11 @@ server {
     # Conditionally include MCP location configuration
     include /etc/nginx/conf.d/mcp.conf.inc;
 
+    # Let's Encrypt ACME challenge for SSL certificate validation
+    location /.well-known/acme-challenge/ {
+        root /var/www/certbot;
+    }
+
     # Match both /api/* and /openapi.json in a single rule
     location ~ ^/(api|openapi.json)(/.*)?$ {
         # Rewrite /api prefixed matched paths
