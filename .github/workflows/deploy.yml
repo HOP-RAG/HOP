@@ -67,9 +67,11 @@ jobs:
 
           # Force-kill any lingering containers holding ports
           echo "Force-cleaning lingering containers..."
+          # Kill old containers from previous project names (onyx-*, hop-*, etc)
+          sudo docker ps -a | grep -E '(onyx-|hop-)' | awk '{print $1}' | xargs -r sudo docker stop 2>/dev/null || true
+          sudo docker ps -a | grep -E '(onyx-|hop-)' | awk '{print $1}' | xargs -r sudo docker rm -f 2>/dev/null || true
           sudo docker stop onyx-proxy 2>/dev/null || true
           sudo docker rm -f onyx-proxy 2>/dev/null || true
-          sudo docker ps -a | grep hop- | awk '{print $1}' | xargs -r sudo docker rm -f 2>/dev/null || true
 
           # Also clean up any dangling containers from previous deployments
           echo "Removing any remaining containers..."
