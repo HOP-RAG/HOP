@@ -474,8 +474,8 @@ services:
     # Without this we've seen issues where nginx shows no error logs but
     # does not receive any traffic
     # PRODUCTION: Change to app.conf.template.prod for production nginx config
-    entrypoint: ["/bin/sh"]
-    command: ["-c", "ls -la /etc/nginx/conf.d/ && exec sh /etc/nginx/conf.d/run-nginx.sh app.conf.template"]
+    entrypoint: []
+    command: ["/bin/sh", "-c", "ls -la /etc/nginx/conf.d/ && exec sh /etc/nginx/conf.d/run-nginx.sh app.conf.template"]
 
   cache:
     image: redis:7.4-alpine
