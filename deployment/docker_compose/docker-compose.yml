@@ -57,6 +57,7 @@ services:
         condition: service_started
       index:
         condition: service_started
+        required: false
       cache:
         condition: service_started
       inference_model_server:
