@@ -13,7 +13,8 @@ echo "$(date '+%Y-%m-%d %H:%M:%S') - [nginx] PWD: $(pwd)"
 echo "==============================================="
 
 # Check if template file exists before proceeding
-TEMPLATE_NAME="${1:-app.conf.template}"
+# Use argument first, fall back to NGINX_CONFIG_TEMPLATE env var, then default
+TEMPLATE_NAME="${1:-${NGINX_CONFIG_TEMPLATE:-app.conf.template}}"
 if [ ! -f "/etc/nginx/conf.d/$TEMPLATE_NAME" ]; then
   echo "$(date '+%Y-%m-%d %H:%M:%S') - [ERROR] Template file not found: /etc/nginx/conf.d/$TEMPLATE_NAME"
   echo "$(date '+%Y-%m-%d %H:%M:%S') - [ERROR] Available files in /etc/nginx/conf.d:"
