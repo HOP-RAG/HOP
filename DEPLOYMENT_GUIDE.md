@@ -481,22 +481,27 @@ DATABASE_URL=postgresql://postgres:password@relational_db:5432/onyx
 POSTGRES_USER=postgres
 POSTGRES_PASSWORD=password
 
-# Cache & Message Broker
-REDIS_URL=redis://redis:6379
-CELERY_BROKER_URL=redis://redis:6379/0
+# Cache & Message Broker (service name is 'cache')
+REDIS_URL=redis://cache:6379
+CELERY_BROKER_URL=redis://cache:6379/0
 
-# File Storage (S3)
-AWS_ACCESS_KEY_ID=minioadmin
-AWS_SECRET_ACCESS_KEY=minioadmin
-S3_ENDPOINT_URL=http://minio:9000
-FILE_STORE_BACKEND=s3
+# File Storage - Choose ONE Option:
+# Option A: PostgreSQL (Simpler, no extra services needed)
+FILE_STORE_BACKEND=postgres
+
+# Option B: S3/MinIO (Requires COMPOSE_PROFILES=s3-filestore in environment)
+# Uncomment below and set COMPOSE_PROFILES=s3-filestore if using S3
+# FILE_STORE_BACKEND=s3
+# AWS_ACCESS_KEY_ID=minioadmin
+# AWS_SECRET_ACCESS_KEY=minioadmin
+# S3_ENDPOINT_URL=http://minio:9000
 
 # Model Server (Embeddings)
 MODEL_SERVER_HOST=inference_model_server
 EMBEDDING_MODEL=nomic-embed-text-v1.5
 
-# Vector Database
-VESPA_HOST=vespa
+# Vector Database (Docker service name is 'index', not 'vespa')
+VESPA_HOST=index
 VESPA_PORT=8081
 
 # Background Jobs
