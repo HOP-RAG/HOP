@@ -447,8 +447,12 @@ services:
     # nginx will immediately crash with `nginx: [emerg] host not found in upstream`
     # if api_server / web_server are not up
     depends_on:
-      - api_server
-      - web_server
+      api_server:
+        condition: service_started
+        required: false
+      web_server:
+        condition: service_started
+        required: false
     env_file:
       - path: .env
         required: false
@@ -476,7 +480,7 @@ services:
     # does not receive any traffic
     # PRODUCTION: Change to app.conf.template.prod for production nginx config
     entrypoint: []
-    command: ["/bin/sh", "-c", "ls -la /etc/nginx/conf.d/ && exec sh /etc/nginx/conf.d/run-nginx.sh app.conf.template"]
+    command: ["/bin/sh", "-c", "sleep 5 && ls -la /etc/nginx/conf.d/ && sh /etc/nginx/conf.d/run-nginx.sh app.conf.template"]
 
   cache:
     image: redis:7.4-alpine
