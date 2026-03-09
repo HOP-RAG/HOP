@@ -457,19 +457,20 @@ services:
       - path: .env
         required: false
     environment:
-      - DOMAIN=localhost
+      - DOMAIN=${DOMAIN:-localhost}
       # Nginx proxy timeout settings (in seconds)
       - NGINX_PROXY_CONNECT_TIMEOUT=${NGINX_PROXY_CONNECT_TIMEOUT:-300}
       - NGINX_PROXY_SEND_TIMEOUT=${NGINX_PROXY_SEND_TIMEOUT:-300}
       - NGINX_PROXY_READ_TIMEOUT=${NGINX_PROXY_READ_TIMEOUT:-300}
+      - NGINX_CONFIG_TEMPLATE=${NGINX_CONFIG_TEMPLATE:-app.conf.template}
     ports:
       - "${HOST_PORT_80:-80}:80"
+      - "${HOST_PORT_443:-443}:443"
       - "${HOST_PORT:-3000}:80" # allow for localhost:3000 usage, since that is the norm
     volumes:
       - ./deployment/data/nginx:/etc/nginx/conf.d
-    # PRODUCTION: Add SSL certificate volumes for HTTPS support:
-    #   - ../data/certbot/conf:/etc/letsencrypt
-    #   - ../data/certbot/www:/var/www/certbot
+      - certbot_conf:/etc/letsencrypt
+      - certbot_www:/var/www/certbot
     logging:
       driver: json-file
       options:
@@ -480,7 +481,7 @@ services:
     # does not receive any traffic
     # PRODUCTION: Change to app.conf.template.prod for production nginx config
     entrypoint: []
-    command: ["/bin/sh", "-c", "sleep 5 && ls -la /etc/nginx/conf.d/ && sh /etc/nginx/conf.d/run-nginx.sh app.conf.template"]
+    command: ["/bin/sh", "-c", "sleep 5 && ls -la /etc/nginx/conf.d/ && sh /etc/nginx/conf.d/run-nginx.sh $NGINX_CONFIG_TEMPLATE"]
 
   cache:
     image: redis:7.4-alpine
@@ -544,19 +545,22 @@ services:
     # uncomment below + comment out the above to use the `docker-in-docker` execution mode
     # privileged: true
 
-  # PRODUCTION: Uncomment the following certbot service for SSL certificate management
-  # certbot:
-  #   image: certbot/certbot
-  #   restart: unless-stopped
-  #   volumes:
-  #     - ../data/certbot/conf:/etc/letsencrypt
-  #     - ../data/certbot/www:/var/www/certbot
-  #   logging:
-  #     driver: json-file
-  #     options:
-  #       max-size: "50m"
-  #       max-file: "6"
-  #   entrypoint: "/bin/sh -c 'trap exit TERM; while :; do certbot renew; sleep 12h & wait $${!}; done;'"
+  # SSL Certificate Management (enable with COMPOSE_PROFILES=ssl)
+  certbot:
+    image: certbot/certbot:latest
+    restart: unless-stopped
+    profiles: ["ssl"]
+    volumes:
+      - certbot_conf:/etc/letsencrypt
+      - certbot_www:/var/www/certbot
+    environment:
+      - DOMAIN=${DOMAIN:-localhost}
+    logging:
+      driver: json-file
+      options:
+        max-size: "50m"
+        max-file: "6"
+    entrypoint: "/bin/sh -c 'trap exit TERM; while :; do certbot renew --quiet; sleep 12h & wait $${!}; done;'"
 
 volumes:
   # Necessary for persisting data for use
@@ -574,5 +578,8 @@ volumes:
   indexing_model_server_logs:
   # Shared volume for persistent document storage (Craft file-system mode)
   file-system:
+  # SSL certificates (certbot)
+  certbot_conf:
+  certbot_www:
   # Persistent data for OpenSearch.
   opensearch-data:
