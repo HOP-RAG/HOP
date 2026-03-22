@@ -82,9 +82,7 @@ export default function LoginPage({
           )}
           <EmailPasswordForm shouldVerify={true} nextUrl={effectiveNextUrl} />
           {NEXT_PUBLIC_FORGOT_PASSWORD_ENABLED && (
-            <Button href="/auth/forgot-password">
-              Restablecer contrasena
-            </Button>
+            <Button href="/auth/forgot-password">Restablecer contrasena</Button>
           )}
         </div>
       )}

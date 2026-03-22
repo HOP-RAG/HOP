@@ -4,8 +4,8 @@ from onyx.configs.app_configs import ENABLE_OPENSEARCH_INDEXING_FOR_ONYX
 from onyx.configs.app_configs import ONYX_QUERY_HISTORY_TYPE
 from onyx.configs.app_configs import SHOW_EXTRA_CONNECTORS
 from onyx.configs.app_configs import USER_FILE_MAX_UPLOAD_SIZE_MB
-from onyx.configs.constants import LEGACY_KV_SETTINGS_KEY
 from onyx.configs.constants import KV_SETTINGS_KEY
+from onyx.configs.constants import LEGACY_KV_SETTINGS_KEY
 from onyx.configs.constants import OnyxRedisLocks
 from onyx.key_value_store.factory import get_kv_store
 from onyx.key_value_store.interface import KvKeyNotFoundError

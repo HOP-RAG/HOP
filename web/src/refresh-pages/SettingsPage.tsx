@@ -1238,8 +1238,8 @@ function AccountsAccessSettings() {
             <Text>
               Any application using the token{" "}
               <Text className="!font-bold">{tokenToDelete.name}</Text>{" "}
-              <Text secondaryMono>({tokenToDelete.token_display})</Text>{" "}
-              perderá acceso a la aplicación. Esta acción no se puede deshacer.
+              <Text secondaryMono>({tokenToDelete.token_display})</Text> perderá
+              acceso a la aplicación. Esta acción no se puede deshacer.
             </Text>
             <Text>Are you sure you want to revoke this token?</Text>
           </Section>
@@ -1571,8 +1571,9 @@ function FederatedConnectorCard({
         >
           <Section gap={0.5} alignItems="start">
             <Text>
-              La aplicación ya no podrá acceder ni buscar contenido de tu
-              cuenta de <Text className="!font-bold">{sourceMetadata.displayName}</Text>.
+              La aplicación ya no podrá acceder ni buscar contenido de tu cuenta
+              de{" "}
+              <Text className="!font-bold">{sourceMetadata.displayName}</Text>.
             </Text>
             <Text>
               You can still continue existing sessions referencing{" "}

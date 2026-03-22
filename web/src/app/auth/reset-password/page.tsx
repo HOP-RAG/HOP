@@ -61,7 +61,10 @@ const ResetPasswordPage: React.FC = () => {
           validationSchema={Yup.object().shape({
             password: Yup.string().required("La contrasena es obligatoria"),
             confirmPassword: Yup.string()
-              .oneOf([Yup.ref("password"), undefined], "Las contrasenas no coinciden")
+              .oneOf(
+                [Yup.ref("password"), undefined],
+                "Las contrasenas no coinciden"
+              )
               .required("Confirma tu contrasena"),
           })}
           onSubmit={async (values) => {
@@ -72,9 +75,7 @@ const ResetPasswordPage: React.FC = () => {
             setIsWorking(true);
             try {
               await resetPassword(token, values.password);
-              toast.success(
-                "Contrasena actualizada. Redirigiendo al login..."
-              );
+              toast.success("Contrasena actualizada. Redirigiendo al login...");
               setTimeout(() => {
                 redirect("/auth/login");
               }, 1000);

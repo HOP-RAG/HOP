@@ -33,9 +33,9 @@ export default function ModelSelectionConfirmationModal({
           </Text>
           <Text as="p">
             We will re-index all your documents in the background so you will be
-            able to continue using the application as normal with the old model in the
-            meantime. Depending on how many documents you have indexed, this may
-            take a while.
+            able to continue using the application as normal with the old model
+            in the meantime. Depending on how many documents you have indexed,
+            this may take a while.
           </Text>
           <Text as="p">
             <i>NOTE:</i> this re-indexing process will consume more resources

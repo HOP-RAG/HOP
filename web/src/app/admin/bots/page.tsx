@@ -44,8 +44,7 @@ function Main() {
       <div className="mb-2">
         <ul className="list-disc mt-2 ml-4 text-sm text-muted-foreground">
           <li>
-            Configurar el bot para responder automáticamente en ciertos
-            canales.
+            Configurar el bot para responder automáticamente en ciertos canales.
           </li>
           <li>
             Elegir desde qué conjuntos de documentos debe responder el bot,

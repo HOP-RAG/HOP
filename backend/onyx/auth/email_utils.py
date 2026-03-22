@@ -209,15 +209,19 @@ def build_html_email(
         cta_block = f'<a class="cta-button" href="{cta_link}">{cta_text}</a>'
     else:
         cta_block = ""
-    return HTML_EMAIL_TEMPLATE.format(
-        application_name=application_name,
-        title=heading,
-        heading=heading,
-        message=message,
-        cta_block=cta_block,
-        community_link_fragment=community_link_fragment,
-        year=datetime.now().year,
-    ).replace("\u00c2\u00a9", "&copy;").replace("\u00a9", "&copy;")
+    return (
+        HTML_EMAIL_TEMPLATE.format(
+            application_name=application_name,
+            title=heading,
+            heading=heading,
+            message=message,
+            cta_block=cta_block,
+            community_link_fragment=community_link_fragment,
+            year=datetime.now().year,
+        )
+        .replace("\u00c2\u00a9", "&copy;")
+        .replace("\u00a9", "&copy;")
+    )
 
 
 def send_email(

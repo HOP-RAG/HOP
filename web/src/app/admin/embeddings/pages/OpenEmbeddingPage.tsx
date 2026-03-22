@@ -58,8 +58,8 @@ export default function OpenEmbeddingPage({
         .
         <br />
         <b>NOTA:</b> no todos los modelos listados funcionarán con la
-        aplicación, ya que algunos tienen interfaces o requisitos especiales.
-        Si tienes dudas, contacta al equipo de soporte.
+        aplicación, ya que algunos tienen interfaces o requisitos especiales. Si
+        tienes dudas, contacta al equipo de soporte.
       </Text>
       {!configureModel && (
         // TODO(@raunakab): migrate to opal Button once className/iconClassName is resolved

@@ -236,13 +236,16 @@ export default function EmailPasswordForm({
                       }}
                     />
                   )}
-                  {!isSignup && meta.touched && meta.error && !showApiMessage && (
-                    <FormField.Message
-                      messages={{
-                        error: meta.error,
-                      }}
-                    />
-                  )}
+                  {!isSignup &&
+                    meta.touched &&
+                    meta.error &&
+                    !showApiMessage && (
+                      <FormField.Message
+                        messages={{
+                          error: meta.error,
+                        }}
+                      />
+                    )}
                   {showApiMessage && (
                     <FormField.APIMessage
                       state={apiStatus}

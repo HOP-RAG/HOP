@@ -20,9 +20,16 @@
   --landing-border: rgba(67, 106, 201, 0.2);
   --landing-border-strong: rgba(67, 106, 201, 0.34);
   --landing-button-text: #fafbfb;
-  background:
-    radial-gradient(circle at 18% -5%, rgba(129, 254, 254, 0.28), transparent 26%),
-    radial-gradient(circle at 82% 12%, rgba(51, 108, 250, 0.16), transparent 24%),
+  background: radial-gradient(
+      circle at 18% -5%,
+      rgba(129, 254, 254, 0.28),
+      transparent 26%
+    ),
+    radial-gradient(
+      circle at 82% 12%,
+      rgba(51, 108, 250, 0.16),
+      transparent 24%
+    ),
     linear-gradient(180deg, #fafbfb 0%, #eef4fb 100%);
 }
 
@@ -48,8 +55,15 @@
   --landing-border: rgba(129, 254, 254, 0.14);
   --landing-border-strong: rgba(67, 106, 201, 0.32);
   --landing-button-text: #050b14;
-  background:
-    radial-gradient(circle at 18% -5%, rgba(129, 254, 254, 0.14), transparent 26%),
-    radial-gradient(circle at 82% 12%, rgba(51, 108, 250, 0.24), transparent 24%),
+  background: radial-gradient(
+      circle at 18% -5%,
+      rgba(129, 254, 254, 0.14),
+      transparent 26%
+    ),
+    radial-gradient(
+      circle at 82% 12%,
+      rgba(51, 108, 250, 0.24),
+      transparent 24%
+    ),
     linear-gradient(180deg, #050b14 0%, #08101c 100%);
 }

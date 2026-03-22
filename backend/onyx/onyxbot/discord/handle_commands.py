@@ -140,7 +140,9 @@ async def handle_registration_command(
         )
     except RegistrationError as e:
         logger.debug(f"Registration failed: {guild_name}, error={e}")
-        await _try_dm_author(message, f":x: **No se pudo completar el registro.**\n\n{e}")
+        await _try_dm_author(
+            message, f":x: **No se pudo completar el registro.**\n\n{e}"
+        )
         await _try_delete_message(message)
     except Exception:
         logger.exception(f"Registration failed unexpectedly: {guild_name}")

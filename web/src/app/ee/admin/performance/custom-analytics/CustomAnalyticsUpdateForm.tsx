@@ -78,8 +78,8 @@ export function CustomAnalyticsUpdateForm() {
           <>
             For security reasons, you must provide a secret key to update this
             script. This should be the value of the{" "}
-            <i>CUSTOM_ANALYTICS_SECRET_KEY</i> environment variable set when
-            se configuró inicialmente la aplicación.
+            <i>CUSTOM_ANALYTICS_SECRET_KEY</i> environment variable set when se
+            configuró inicialmente la aplicación.
           </>
         </SubLabel>
         <input

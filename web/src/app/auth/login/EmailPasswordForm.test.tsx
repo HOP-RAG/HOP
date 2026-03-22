@@ -90,9 +90,7 @@ describe("Email/Password Login Workflow", () => {
     await user.click(loginButton);
 
     await waitFor(() => {
-      expect(
-        screen.getByText(/^Credenciales invalidas$/i)
-      ).toBeInTheDocument();
+      expect(screen.getByText(/^Credenciales invalidas$/i)).toBeInTheDocument();
     });
   });
 });
@@ -166,7 +164,9 @@ describe("Email/Password Signup Workflow", () => {
     });
 
     await waitFor(() => {
-      expect(screen.getByText(/cuenta creada\. ingresando/i)).toBeInTheDocument();
+      expect(
+        screen.getByText(/cuenta creada\. ingresando/i)
+      ).toBeInTheDocument();
     });
   });
 
@@ -223,7 +223,9 @@ describe("Email/Password Signup Workflow", () => {
 
     await waitFor(() => {
       expect(
-        screen.getByText(/^Demasiados intentos\. Intentalo de nuevo mas tarde\.$/i)
+        screen.getByText(
+          /^Demasiados intentos\. Intentalo de nuevo mas tarde\.$/i
+        )
       ).toBeInTheDocument();
     });
   });

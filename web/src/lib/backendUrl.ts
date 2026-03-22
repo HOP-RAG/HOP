@@ -1,5 +1,4 @@
-const NEXT_PUBLIC_ONYX_BACKEND_URL =
-  process.env.NEXT_PUBLIC_ONYX_BACKEND_URL;
+const NEXT_PUBLIC_ONYX_BACKEND_URL = process.env.NEXT_PUBLIC_ONYX_BACKEND_URL;
 
 const DEV_FRONTEND_PORT = "3000";
 const DEFAULT_DEV_BACKEND_PORT = "8080";
@@ -37,7 +36,9 @@ export function buildBrowserWebSocketUrl({
   if (configuredBackendUrl) {
     const protocol =
       configuredBackendUrl.protocol === "https:" ? "wss:" : "ws:";
-    return `${protocol}//${configuredBackendUrl.host}${proxiedPath}?token=${encodeURIComponent(token)}`;
+    return `${protocol}//${
+      configuredBackendUrl.host
+    }${proxiedPath}?token=${encodeURIComponent(token)}`;
   }
 
   const protocol = window.location.protocol === "https:" ? "wss:" : "ws:";

@@ -103,12 +103,7 @@ export default function ImpersonatePage() {
           )}
         </Formik>
 
-        <Text
-          as="p"
-          mainUiMuted
-          text03
-          className="mt-4 text-center px-4"
-        >
+        <Text as="p" mainUiMuted text03 className="mt-4 text-center px-4">
           Esta función solo está disponible para administradores internos.
         </Text>
       </div>

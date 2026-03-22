@@ -1,7 +1,4 @@
-import {
-  ChatSession,
-  ChatSessionSharedStatus,
-} from "@/app/app/interfaces";
+import { ChatSession, ChatSessionSharedStatus } from "@/app/app/interfaces";
 import {
   persistHideMoveCustomAgentModal,
   shouldHideMoveCustomAgentModal,

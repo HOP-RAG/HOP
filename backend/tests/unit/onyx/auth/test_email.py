@@ -20,9 +20,7 @@ def test_build_user_email_invite_uses_default_application_name() -> None:
 
     assert ONYX_DEFAULT_APPLICATION_NAME in text_content
     assert ONYX_DEFAULT_APPLICATION_NAME in html_content
-    assert (
-        f"join an organization on {ONYX_DEFAULT_APPLICATION_NAME}" in text_content
-    )
+    assert f"join an organization on {ONYX_DEFAULT_APPLICATION_NAME}" in text_content
 
 
 def test_build_html_email_uses_default_application_name() -> None:

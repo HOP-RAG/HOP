@@ -7,7 +7,6 @@ Create Date: 2026-02-04 18:16:24.830873
 """
 
 from alembic import op
-import sqlalchemy as sa
 
 # revision identifiers, used by Alembic.
 revision = "175ea04c7087"
@@ -17,9 +16,7 @@ depends_on = None
 
 
 def upgrade() -> None:
-    op.execute(
-        "ALTER TABLE \"user\" ADD COLUMN IF NOT EXISTS user_preferences TEXT"
-    )
+    op.execute('ALTER TABLE "user" ADD COLUMN IF NOT EXISTS user_preferences TEXT')
 
 
 def downgrade() -> None:

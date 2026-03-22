@@ -447,8 +447,8 @@ export default function VoiceProviderSetupModal({
                     >
                       Azure Portal (Keys and Endpoint)
                     </a>
-                    . La aplicación extrae la región de voz desde esta URL. Ejemplos:
-                    https://westus.api.cognitive.microsoft.com/ or
+                    . La aplicación extrae la región de voz desde esta URL.
+                    Ejemplos: https://westus.api.cognitive.microsoft.com/ or
                     https://westus.tts.speech.microsoft.com/.
                   </>
                 }

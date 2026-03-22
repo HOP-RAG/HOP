@@ -170,9 +170,7 @@ def _handle_standard_answers(
 
         formatted_answers = []
         for standard_answer, match_str in matching_standard_answers:
-            since_you_mentioned_pretext = (
-                f'Como tu pregunta incluye "_{match_str}_"'
-            )
+            since_you_mentioned_pretext = f'Como tu pregunta incluye "_{match_str}_"'
             block_quotified_answer = ">" + standard_answer.answer.replace("\n", "\n> ")
             formatted_answer = (
                 f"{since_you_mentioned_pretext}, pense que esto podria ser util:\n\n"

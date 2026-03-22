@@ -26,9 +26,8 @@ function Main() {
     <div>
       <Text className="mb-8">
         Esto te permite usar tu propia herramienta de analítica con la
-        aplicación. Copia el snippet web de tu proveedor en el cuadro de abajo
-        y lo
-        start sending usage events.
+        aplicación. Copia el snippet web de tu proveedor en el cuadro de abajo y
+        lo start sending usage events.
       </Text>
 
       <CustomAnalyticsUpdateForm />

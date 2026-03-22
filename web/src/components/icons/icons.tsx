@@ -1228,4 +1228,3 @@ export const XMLIcon = ({
     </svg>
   );
 };
-

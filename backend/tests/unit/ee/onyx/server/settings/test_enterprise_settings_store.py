@@ -44,9 +44,7 @@ def test_load_settings_migrates_legacy_enterprise_settings_key(
         }
     )
 
-    monkeypatch.setattr(
-        enterprise_settings_store, "get_kv_store", lambda: kv_store
-    )
+    monkeypatch.setattr(enterprise_settings_store, "get_kv_store", lambda: kv_store)
 
     settings = enterprise_settings_store.load_settings()
 

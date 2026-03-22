@@ -94,12 +94,14 @@ const steps: Step[] = [
   {
     number: "02",
     title: "Consulta con evidencia",
-    description: "Pregunta en lenguaje natural y recibe respuestas con fuentes.",
+    description:
+      "Pregunta en lenguaje natural y recibe respuestas con fuentes.",
   },
   {
     number: "03",
     title: "Ejecuta con control",
-    description: "Convierte una respuesta en una accion con aprobacion y registro.",
+    description:
+      "Convierte una respuesta en una accion con aprobacion y registro.",
   },
 ];
 
@@ -399,7 +401,9 @@ export default function Landing() {
               <div className="grid gap-6 lg:grid-cols-2">
                 {steps.map((step, index) => (
                   <StepCard
-                    className={cn(index === steps.length - 1 && "lg:col-span-2")}
+                    className={cn(
+                      index === steps.length - 1 && "lg:col-span-2"
+                    )}
                     key={step.number}
                     description={step.description}
                     number={step.number}
@@ -438,7 +442,6 @@ export default function Landing() {
               </div>
             </div>
           </section>
-
         </main>
 
         <footer className="border-t border-[color:var(--landing-border)] bg-[color:var(--landing-surface)] px-6 py-8 lg:px-8">

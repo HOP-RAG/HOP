@@ -26,9 +26,7 @@ const ForgotPasswordPage: React.FC = () => {
     <AuthFlowContainer>
       <div className="flex flex-col w-full justify-center">
         <div className="flex">
-          <Title className="mb-2 mx-auto font-bold">
-            Recuperar contrasena
-          </Title>
+          <Title className="mb-2 mx-auto font-bold">Recuperar contrasena</Title>
         </div>
         {isWorking && <Spinner />}
         <Formik

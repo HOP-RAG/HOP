@@ -62,7 +62,9 @@ export default function NewTenantModal({
         toast.success("Aceptaste la invitación.");
       } else {
         // For non-invite flow, just show success message
-        toast.success("Estamos procesando tu solicitud para unirte al equipo...");
+        toast.success(
+          "Estamos procesando tu solicitud para unirte al equipo..."
+        );
       }
 
       // Common logout and redirect for both flows
@@ -123,12 +125,12 @@ export default function NewTenantModal({
   }
 
   const title = isInvite
-    ? `Te invitaron a unirte a ${
-        tenantInfo.number_of_users
-      } integrante${
+    ? `Te invitaron a unirte a ${tenantInfo.number_of_users} integrante${
         tenantInfo.number_of_users === 1 ? "" : "s"
       } más del equipo de ${applicationName}.`
-    : `Se aprobó tu solicitud para unirte a ${tenantInfo.number_of_users} usuario${
+    : `Se aprobó tu solicitud para unirte a ${
+        tenantInfo.number_of_users
+      } usuario${
         tenantInfo.number_of_users === 1 ? "" : "s"
       } más del equipo de ${applicationName}.`;
 

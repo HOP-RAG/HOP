@@ -1,4 +1,7 @@
-.authFuture :global(.interactive[data-interactive-variant="default"][data-interactive-prominence="primary"]) {
+.authFuture
+  :global(
+    .interactive[data-interactive-variant="default"][data-interactive-prominence="primary"]
+  ) {
   background-color: var(--landing-accent);
   --interactive-foreground: var(--landing-button-text);
   --interactive-foreground-icon: var(--landing-button-text);
@@ -6,27 +9,61 @@
 }
 
 .authFuture
-  :global(.interactive[data-interactive-variant="default"][data-interactive-prominence="primary"]:hover:not([data-disabled])),
+  :global(
+    .interactive[data-interactive-variant="default"][data-interactive-prominence="primary"]:hover:not(
+        [data-disabled]
+      )
+  ),
 .authFuture
-  :global(.interactive[data-interactive-variant="default"][data-interactive-prominence="primary"][data-interaction="hover"]:not([data-disabled])) {
+  :global(
+    .interactive[data-interactive-variant="default"][data-interactive-prominence="primary"][data-interaction="hover"]:not(
+        [data-disabled]
+      )
+  ) {
   background-color: var(--landing-accent-strong);
 }
 
 .authFuture
-  :global(.interactive[data-interactive-variant="default"][data-interactive-prominence="primary"]:active:not([data-disabled])),
+  :global(
+    .interactive[data-interactive-variant="default"][data-interactive-prominence="primary"]:active:not(
+        [data-disabled]
+      )
+  ),
 .authFuture
-  :global(.interactive[data-interactive-variant="default"][data-interactive-prominence="primary"][data-interaction="active"]:not([data-disabled])) {
+  :global(
+    .interactive[data-interactive-variant="default"][data-interactive-prominence="primary"][data-interaction="active"]:not(
+        [data-disabled]
+      )
+  ) {
   background-color: var(--landing-accent-strong);
 }
 
-.authFuture :global(.interactive[data-interactive-variant="default"][data-interactive-prominence="primary"][data-disabled]) {
-  background-color: color-mix(in srgb, var(--landing-card-solid) 84%, transparent);
-  --interactive-foreground: color-mix(in srgb, var(--landing-muted) 72%, transparent);
-  --interactive-foreground-icon: color-mix(in srgb, var(--landing-muted) 72%, transparent);
+.authFuture
+  :global(
+    .interactive[data-interactive-variant="default"][data-interactive-prominence="primary"][data-disabled]
+  ) {
+  background-color: color-mix(
+    in srgb,
+    var(--landing-card-solid) 84%,
+    transparent
+  );
+  --interactive-foreground: color-mix(
+    in srgb,
+    var(--landing-muted) 72%,
+    transparent
+  );
+  --interactive-foreground-icon: color-mix(
+    in srgb,
+    var(--landing-muted) 72%,
+    transparent
+  );
   box-shadow: none;
 }
 
-.authFuture :global(.interactive[data-interactive-variant="default"][data-interactive-prominence="secondary"]) {
+.authFuture
+  :global(
+    .interactive[data-interactive-variant="default"][data-interactive-prominence="secondary"]
+  ) {
   background-color: var(--landing-card-solid);
   --interactive-foreground: var(--landing-accent-strong);
   --interactive-foreground-icon: var(--landing-accent-strong);
@@ -34,23 +71,54 @@
 }
 
 .authFuture
-  :global(.interactive[data-interactive-variant="default"][data-interactive-prominence="secondary"]:hover:not([data-disabled])),
+  :global(
+    .interactive[data-interactive-variant="default"][data-interactive-prominence="secondary"]:hover:not(
+        [data-disabled]
+      )
+  ),
 .authFuture
-  :global(.interactive[data-interactive-variant="default"][data-interactive-prominence="secondary"][data-interaction="hover"]:not([data-disabled])) {
+  :global(
+    .interactive[data-interactive-variant="default"][data-interactive-prominence="secondary"][data-interaction="hover"]:not(
+        [data-disabled]
+      )
+  ) {
   background-color: var(--landing-surface-alt);
 }
 
 .authFuture
-  :global(.interactive[data-interactive-variant="default"][data-interactive-prominence="secondary"]:active:not([data-disabled])),
+  :global(
+    .interactive[data-interactive-variant="default"][data-interactive-prominence="secondary"]:active:not(
+        [data-disabled]
+      )
+  ),
 .authFuture
-  :global(.interactive[data-interactive-variant="default"][data-interactive-prominence="secondary"][data-interaction="active"]:not([data-disabled])) {
+  :global(
+    .interactive[data-interactive-variant="default"][data-interactive-prominence="secondary"][data-interaction="active"]:not(
+        [data-disabled]
+      )
+  ) {
   background-color: var(--landing-card);
 }
 
-.authFuture :global(.interactive[data-interactive-variant="default"][data-interactive-prominence="secondary"][data-disabled]) {
-  background-color: color-mix(in srgb, var(--landing-card-solid) 80%, transparent);
-  --interactive-foreground: color-mix(in srgb, var(--landing-muted) 70%, transparent);
-  --interactive-foreground-icon: color-mix(in srgb, var(--landing-muted) 70%, transparent);
+.authFuture
+  :global(
+    .interactive[data-interactive-variant="default"][data-interactive-prominence="secondary"][data-disabled]
+  ) {
+  background-color: color-mix(
+    in srgb,
+    var(--landing-card-solid) 80%,
+    transparent
+  );
+  --interactive-foreground: color-mix(
+    in srgb,
+    var(--landing-muted) 70%,
+    transparent
+  );
+  --interactive-foreground-icon: color-mix(
+    in srgb,
+    var(--landing-muted) 70%,
+    transparent
+  );
   box-shadow: none;
 }
 

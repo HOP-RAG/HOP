@@ -56,8 +56,8 @@ export default function NoLlmProvidersModal({
                 LLM Provider Required
               </Text>
               <Text mainUiBody text03 className="max-w-sm">
-                ACTIVA Craft necesita un proveedor de LLM configurado, pero
-                solo los administradores pueden hacerlo.
+                ACTIVA Craft necesita un proveedor de LLM configurado, pero solo
+                los administradores pueden hacerlo.
                 <br />
                 <br />
                 Pídele a tu administrador que configure un proveedor de LLM o
