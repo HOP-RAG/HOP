@@ -4,14 +4,17 @@ concurrency:
   cancel-in-progress: true
 
 on:
-  merge_group:
-  pull_request:
-    branches:
-      - main
-      - "release/**"
-  push:
-    tags:
-      - "v*.*.*"
+  # Disabled: no integration secrets configured in GitHub.
+  # Re-enable by uncommenting the triggers below.
+  # merge_group:
+  # pull_request:
+  #   branches:
+  #     - main
+  #     - "release/**"
+  # push:
+  #   tags:
+  #     - "v*.*.*"
+  workflow_dispatch:
 
 permissions:
   contents: read
