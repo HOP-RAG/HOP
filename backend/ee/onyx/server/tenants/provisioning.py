@@ -25,7 +25,6 @@ from onyx.auth.users import exceptions
 from onyx.configs.app_configs import ANTHROPIC_DEFAULT_API_KEY
 from onyx.configs.app_configs import COHERE_DEFAULT_API_KEY
 from onyx.configs.app_configs import CONTROL_PLANE_API_BASE_URL
-from onyx.configs.app_configs import DEV_MODE
 from onyx.configs.app_configs import OPENAI_DEFAULT_API_KEY
 from onyx.configs.app_configs import OPENROUTER_DEFAULT_API_KEY
 from onyx.configs.app_configs import VERTEXAI_DEFAULT_CREDENTIALS
@@ -41,6 +40,8 @@ from onyx.db.models import AvailableTenant
 from onyx.db.models import IndexModelStatus
 from onyx.db.models import SearchSettings
 from onyx.db.models import UserTenantMapping
+from onyx.error_handling.error_codes import OnyxErrorCode
+from onyx.error_handling.exceptions import OnyxError
 from onyx.llm.well_known_providers.auto_update_models import LLMRecommendations
 from onyx.llm.well_known_providers.constants import ANTHROPIC_PROVIDER_NAME
 from onyx.llm.well_known_providers.constants import OPENAI_PROVIDER_NAME
@@ -57,6 +58,8 @@ from onyx.llm.well_known_providers.llm_provider_options import (
 from onyx.server.manage.embedding.models import CloudEmbeddingProviderCreationRequest
 from onyx.server.manage.llm.models import LLMProviderUpsertRequest
 from onyx.server.manage.llm.models import ModelConfigurationUpsertRequest
+from onyx.server.settings.store import load_settings
+from onyx.server.settings.store import store_settings
 from onyx.setup import setup_onyx
 from onyx.utils.logger import setup_logger
 from shared_configs.configs import MULTI_TENANT
@@ -75,52 +78,29 @@ async def get_or_provision_tenant(
     request: Request | None = None,
 ) -> str:
     """
-    Get existing tenant ID for an email or create a new tenant if none exists.
-    This function should only be called after we have verified we want this user's tenant to exist.
-    It returns the tenant ID associated with the email, creating a new tenant if necessary.
+    Resolve the tenant mapping for an email.
+
+    Self-hosted multi-tenant deployments do not auto-create or auto-assign
+    tenants during auth flows anymore. Users must already have a
+    UserTenantMapping, typically created by an invitation or by an explicit
+    company-creation flow.
     """
-    # Early return for non-multi-tenant mode
     if not MULTI_TENANT:
         return POSTGRES_DEFAULT_SCHEMA
+
+    try:
+        tenant_id = get_tenant_id_for_email(email)
+    except exceptions.UserNotExists:
+        logger.warning("Rejected tenant resolution for unmapped email %s", email)
+        raise OnyxError(
+            OnyxErrorCode.INSUFFICIENT_PERMISSIONS,
+            "This account has not been invited to a company yet.",
+        )
 
     if referral_source and request:
         await submit_to_hubspot(email, referral_source, request)
 
-    # First, check if the user already has a tenant
-    tenant_id: str | None = None
-    try:
-        tenant_id = get_tenant_id_for_email(email)
-        return tenant_id
-    except exceptions.UserNotExists:
-        # User doesn't exist, so we need to create a new tenant or assign an existing one
-        pass
-
-    try:
-        # Try to get a pre-provisioned tenant
-        tenant_id = await get_available_tenant()
-
-        if tenant_id:
-            # If we have a pre-provisioned tenant, assign it to the user
-            await assign_tenant_to_user(tenant_id, email, referral_source)
-            logger.info(f"Assigned pre-provisioned tenant {tenant_id} to user {email}")
-        else:
-            # If no pre-provisioned tenant is available, create a new one on-demand
-            tenant_id = await create_tenant(email, referral_source)
-
-        # Notify control plane if we have created / assigned a new tenant
-        if not DEV_MODE:
-            await notify_control_plane(tenant_id, email, referral_source)
-
-        return tenant_id
-
-    except Exception as e:
-        # If we've encountered an error, log and raise an exception
-        error_msg = "Failed to provision tenant"
-        logger.error(error_msg, exc_info=e)
-        raise HTTPException(
-            status_code=500,
-            detail="Failed to provision tenant. Please try again later.",
-        )
+    return tenant_id
 
 
 async def create_tenant(
@@ -681,6 +661,11 @@ async def setup_tenant(tenant_id: str) -> None:
                 and current_search_settings.provider_type == EmbeddingProvider.COHERE
             )
             setup_onyx(db_session, tenant_id, cohere_enabled=cohere_enabled)
+
+            settings = load_settings()
+            if not settings.invite_only_enabled:
+                settings.invite_only_enabled = True
+                store_settings(settings)
 
     except Exception as e:
         logger.exception(f"Failed to set up tenant {tenant_id}")
