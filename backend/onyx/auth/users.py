@@ -459,8 +459,9 @@ class UserManager(UUIDIDMixin, BaseUserManager[User, uuid.UUID]):
             async with get_async_session_context_manager(tenant_id) as db_session:
                 # Check invite list based on deployment mode
                 if MULTI_TENANT:
-                    # Multi-tenant: Only require invite for existing tenants
-                    # New tenant creation (first user) doesn't require an invite
+                    # Multi-tenant: the first user for a mapped tenant can finish
+                    # registration without the invite-only list, but any existing
+                    # tenant with users must still enforce invites for new signups.
                     user_count = await get_user_count()
                     if user_count > 0:
                         # Tenant already has users - require invite for new users
@@ -782,31 +783,50 @@ class UserManager(UUIDIDMixin, BaseUserManager[User, uuid.UUID]):
         request: Optional[Request] = None,
         response: Optional[Response] = None,
     ) -> None:
-        try:
-            if response and request:
-                for cookie_name in (
-                    ANONYMOUS_USER_COOKIE_NAME,
-                    LEGACY_ANONYMOUS_USER_COOKIE_NAME,
-                ):
-                    if cookie_name not in request.cookies:
-                        continue
-
-                    response.delete_cookie(
-                        cookie_name,
-                        # Ensure cookie deletion doesn't override other cookies by setting the same path/domain
-                        path="/",
-                        domain=None,
-                        secure=WEB_DOMAIN.startswith("https"),
-                    )
-                logger.debug(f"Deleted anonymous user cookie for user {user.email}")
-        except Exception:
-            logger.exception("Error deleting anonymous user cookie")
-
+        tenant_token = None
         tenant_id = CURRENT_TENANT_ID_CONTEXTVAR.get()
-        mt_cloud_identify(
-            distinct_id=str(user.id),
-            properties={"email": user.email, "tenant_id": tenant_id},
-        )
+
+        if AUTH_TYPE == AuthType.BASIC:
+            tenant_id = await fetch_ee_implementation_or_noop(
+                "onyx.server.tenants.provisioning",
+                "get_or_provision_tenant",
+                async_return_default_schema,
+            )(
+                email=user.email,
+                request=request,
+            )
+            tenant_token = CURRENT_TENANT_ID_CONTEXTVAR.set(tenant_id)
+
+        try:
+            try:
+                if response and request:
+                    for cookie_name in (
+                        ANONYMOUS_USER_COOKIE_NAME,
+                        LEGACY_ANONYMOUS_USER_COOKIE_NAME,
+                    ):
+                        if cookie_name not in request.cookies:
+                            continue
+
+                        response.delete_cookie(
+                            cookie_name,
+                            # Ensure cookie deletion doesn't override other cookies by setting the same path/domain
+                            path="/",
+                            domain=None,
+                            secure=WEB_DOMAIN.startswith("https"),
+                        )
+                    logger.debug(
+                        f"Deleted anonymous user cookie for user {user.email}"
+                    )
+            except Exception:
+                logger.exception("Error deleting anonymous user cookie")
+
+            mt_cloud_identify(
+                distinct_id=str(user.id),
+                properties={"email": user.email, "tenant_id": tenant_id},
+            )
+        finally:
+            if tenant_token is not None:
+                CURRENT_TENANT_ID_CONTEXTVAR.reset(tenant_token)
 
     async def on_after_register(
         self, user: User, request: Optional[Request] = None
