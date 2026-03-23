@@ -1,3 +1,4 @@
+from typing import NoReturn
 from typing import cast
 from typing import Literal
 
@@ -5,10 +6,13 @@ import requests
 import stripe
 
 from ee.onyx.configs.app_configs import STRIPE_SECRET_KEY
+from ee.onyx.server.control_plane import is_control_plane_configured
 from ee.onyx.server.tenants.access import generate_data_plane_token
 from ee.onyx.server.tenants.models import BillingInformation
 from ee.onyx.server.tenants.models import SubscriptionStatusResponse
 from onyx.configs.app_configs import CONTROL_PLANE_API_BASE_URL
+from onyx.error_handling.error_codes import OnyxErrorCode
+from onyx.error_handling.exceptions import OnyxError
 from onyx.utils.logger import setup_logger
 
 stripe.api_key = STRIPE_SECRET_KEY
@@ -16,11 +20,21 @@ stripe.api_key = STRIPE_SECRET_KEY
 logger = setup_logger()
 
 
+def _raise_billing_disabled_without_control_plane() -> NoReturn:
+    raise OnyxError(
+        OnyxErrorCode.NOT_IMPLEMENTED,
+        "Billing is disabled when no control plane is configured.",
+    )
+
+
 def fetch_stripe_checkout_session(
     tenant_id: str,
     billing_period: Literal["monthly", "annual"] = "monthly",
     seats: int | None = None,
 ) -> str:
+    if not is_control_plane_configured(CONTROL_PLANE_API_BASE_URL):
+        _raise_billing_disabled_without_control_plane()
+
     token = generate_data_plane_token()
     headers = {
         "Authorization": f"Bearer {token}",
@@ -50,6 +64,9 @@ def fetch_stripe_checkout_session(
 
 
 def fetch_tenant_stripe_information(tenant_id: str) -> dict:
+    if not is_control_plane_configured(CONTROL_PLANE_API_BASE_URL):
+        _raise_billing_disabled_without_control_plane()
+
     token = generate_data_plane_token()
     headers = {
         "Authorization": f"Bearer {token}",
@@ -65,6 +82,9 @@ def fetch_tenant_stripe_information(tenant_id: str) -> dict:
 def fetch_billing_information(
     tenant_id: str,
 ) -> BillingInformation | SubscriptionStatusResponse:
+    if not is_control_plane_configured(CONTROL_PLANE_API_BASE_URL):
+        return SubscriptionStatusResponse(subscribed=False)
+
     token = generate_data_plane_token()
     headers = {
         "Authorization": f"Bearer {token}",
@@ -95,6 +115,9 @@ def fetch_customer_portal_session(tenant_id: str, return_url: str | None = None)
     NOTE: This is currently only used for multi-tenant (cloud) deployments.
     Self-hosted proxy endpoints will be added in a future phase.
     """
+    if not is_control_plane_configured(CONTROL_PLANE_API_BASE_URL):
+        _raise_billing_disabled_without_control_plane()
+
     token = generate_data_plane_token()
     headers = {
         "Authorization": f"Bearer {token}",

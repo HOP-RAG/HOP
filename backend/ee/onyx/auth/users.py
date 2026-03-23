@@ -3,17 +3,17 @@ from datetime import datetime
 
 import jwt
 from fastapi import Depends
-from fastapi import HTTPException
 from fastapi import Request
-from fastapi import status
 
-from ee.onyx.configs.app_configs import SUPER_CLOUD_API_KEY
+from ee.onyx.configs.app_configs import PLATFORM_ADMIN_API_KEY
 from ee.onyx.configs.app_configs import SUPER_USERS
 from ee.onyx.server.seeding import get_seed_config
 from onyx.auth.users import current_admin_user
 from onyx.configs.app_configs import AUTH_TYPE
 from onyx.configs.app_configs import USER_AUTH_SECRET
 from onyx.db.models import User
+from onyx.error_handling.error_codes import OnyxErrorCode
+from onyx.error_handling.exceptions import OnyxError
 from onyx.utils.logger import setup_logger
 
 
@@ -37,20 +37,23 @@ def get_default_admin_user_emails_() -> list[str]:
     return []
 
 
-async def current_cloud_superuser(
+async def current_platform_admin(
     request: Request,
     user: User = Depends(current_admin_user),
 ) -> User:
-    api_key = request.headers.get("Authorization", "").replace("Bearer ", "")
-    if api_key != SUPER_CLOUD_API_KEY:
-        raise HTTPException(status_code=401, detail="Invalid API key")
+    api_key = request.headers.get("Authorization", "").removeprefix("Bearer ").strip()
+    if api_key != PLATFORM_ADMIN_API_KEY:
+        raise OnyxError(OnyxErrorCode.UNAUTHENTICATED, "Invalid API key")
 
-    if user and user.email not in SUPER_USERS:
-        raise HTTPException(
-            status_code=status.HTTP_403_FORBIDDEN,
-            detail="Access denied. User must be a cloud superuser to perform this action.",
+    if user and user.email.lower() not in SUPER_USERS:
+        raise OnyxError(
+            OnyxErrorCode.INSUFFICIENT_PERMISSIONS,
+            "Access denied. User must be a platform admin to perform this action.",
         )
     return user
+
+
+current_cloud_superuser = current_platform_admin
 
 
 def generate_anonymous_user_jwt_token(tenant_id: str) -> str:

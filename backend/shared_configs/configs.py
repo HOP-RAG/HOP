@@ -230,13 +230,21 @@ SKIP_USERFILE_THRESHOLD_TENANT_LIST = (
 #####
 # Usage Limits Configuration (meant for cloud, off by default for self-hosted)
 #####
-# Whether usage limits are enforced (defaults to MULTI_TENANT value)
+# Whether usage limits are enforced.
+# By default, this is only enabled when running multi-tenant with a non-default
+# control plane configured. Self-hosted multi-tenant deployments should not
+# implicitly enable usage limits.
 _USAGE_LIMITS_ENABLED_RAW = os.environ.get("USAGE_LIMITS_ENABLED")
+_CONTROL_PLANE_API_BASE_URL = (
+    os.environ.get("CONTROL_PLANE_API_BASE_URL", "http://localhost:8082") or ""
+).strip().rstrip("/")
+_CONTROL_PLANE_CONFIGURED = bool(_CONTROL_PLANE_API_BASE_URL) and (
+    _CONTROL_PLANE_API_BASE_URL != "http://localhost:8082"
+)
 if _USAGE_LIMITS_ENABLED_RAW is not None:
     USAGE_LIMITS_ENABLED = _USAGE_LIMITS_ENABLED_RAW.lower() == "true"
 else:
-    # Default: enabled on cloud (MULTI_TENANT), disabled for self-hosted
-    USAGE_LIMITS_ENABLED = MULTI_TENANT
+    USAGE_LIMITS_ENABLED = MULTI_TENANT and _CONTROL_PLANE_CONFIGURED
 
 # Usage limit window in seconds (default: 1 week = 604800 seconds)
 USAGE_LIMIT_WINDOW_SECONDS = int(os.environ.get("USAGE_LIMIT_WINDOW_SECONDS", "604800"))

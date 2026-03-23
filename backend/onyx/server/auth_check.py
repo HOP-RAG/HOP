@@ -103,8 +103,8 @@ def check_router_auth(
     control_plane_dep = fetch_ee_implementation_or_noop(
         "onyx.server.tenants.access", "control_plane_dep"
     )
-    current_cloud_superuser = fetch_ee_implementation_or_noop(
-        "onyx.auth.users", "current_cloud_superuser"
+    current_platform_admin = fetch_ee_implementation_or_noop(
+        "onyx.auth.users", "current_platform_admin"
     )
     verify_scim_token = fetch_ee_implementation_or_noop(
         "onyx.server.scim.auth", "verify_scim_token"
@@ -132,7 +132,7 @@ def check_router_auth(
                     or depends_fn == current_chat_accessible_user
                     or depends_fn == current_user_from_websocket
                     or depends_fn == control_plane_dep
-                    or depends_fn == current_cloud_superuser
+                    or depends_fn == current_platform_admin
                     or depends_fn == verify_scim_token
                 ):
                     found_auth = True

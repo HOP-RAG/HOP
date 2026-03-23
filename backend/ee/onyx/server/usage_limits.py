@@ -1,8 +1,10 @@
 """EE Usage limits - trial detection via billing information."""
 
+from ee.onyx.server.control_plane import is_control_plane_configured
 from ee.onyx.server.tenants.billing import fetch_billing_information
 from ee.onyx.server.tenants.models import BillingInformation
 from ee.onyx.server.tenants.models import SubscriptionStatusResponse
+from onyx.configs.app_configs import CONTROL_PLANE_API_BASE_URL
 from onyx.utils.logger import setup_logger
 from shared_configs.configs import MULTI_TENANT
 
@@ -17,6 +19,8 @@ def is_tenant_on_trial(tenant_id: str) -> bool:
     to determine if the tenant has an active trial.
     """
     if not MULTI_TENANT:
+        return False
+    if not is_control_plane_configured(CONTROL_PLANE_API_BASE_URL):
         return False
 
     try:

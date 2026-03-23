@@ -251,6 +251,21 @@ class TestGetBillingInformation:
         assert isinstance(result, SubscriptionStatusResponse)
         assert result.subscribed is False
 
+    @pytest.mark.asyncio
+    @patch("ee.onyx.server.billing.service.MULTI_TENANT", True)
+    @patch("ee.onyx.server.billing.service.is_control_plane_configured", return_value=False)
+    async def test_returns_not_subscribed_without_control_plane(
+        self,
+        mock_control_plane: MagicMock,  # noqa: ARG002
+    ) -> None:
+        """Multi-tenant self-hosted should not require control plane for reads."""
+        from ee.onyx.server.billing.service import get_billing_information
+
+        result = await get_billing_information(tenant_id="tenant_123")
+
+        assert isinstance(result, SubscriptionStatusResponse)
+        assert result.subscribed is False
+
 
 class TestUpdateSeatCount:
     """Tests for update_seat_count service function."""
@@ -307,3 +322,21 @@ class TestUpdateSeatCount:
 
         call_kwargs = mock_request.call_args[1]
         assert call_kwargs["body"]["tenant_id"] == "tenant_123"
+
+
+class TestControlPlaneDisabledBilling:
+    """Tests for self-hosted multi-tenant deployments without control plane."""
+
+    @pytest.mark.asyncio
+    @patch("ee.onyx.server.billing.service.MULTI_TENANT", True)
+    @patch("ee.onyx.server.billing.service.is_control_plane_configured", return_value=False)
+    async def test_create_checkout_session_raises_when_control_plane_missing(
+        self,
+        mock_control_plane: MagicMock,  # noqa: ARG002
+    ) -> None:
+        from ee.onyx.server.billing.service import create_checkout_session
+
+        with pytest.raises(OnyxError) as exc_info:
+            await create_checkout_session(tenant_id="tenant_123")
+
+        assert exc_info.value.error_code is OnyxErrorCode.NOT_IMPLEMENTED
