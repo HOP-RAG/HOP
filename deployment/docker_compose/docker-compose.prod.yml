@@ -545,6 +545,55 @@ services:
     tmpfs:
       - /data
 
+  postgres-exporter:
+    image: quay.io/prometheuscommunity/postgres-exporter:v0.18.1
+    restart: unless-stopped
+    depends_on:
+      - relational_db
+    deploy:
+      resources:
+        limits:
+          cpus: '0.25'
+          memory: 128M
+        reservations:
+          cpus: '0.10'
+          memory: 32M
+    environment:
+      - DATA_SOURCE_URI=relational_db:5432/${POSTGRES_DB:-postgres}?sslmode=disable
+      - DATA_SOURCE_USER=${DB_READONLY_USER:-db_readonly_user}
+      - DATA_SOURCE_PASS=${DB_READONLY_PASSWORD:-password}
+    expose:
+      - "9187"
+    logging:
+      driver: json-file
+      options:
+        max-size: "50m"
+        max-file: "6"
+
+  redis-exporter:
+    image: ghcr.io/oliver006/redis_exporter:v1.80.1
+    restart: unless-stopped
+    depends_on:
+      - cache
+    deploy:
+      resources:
+        limits:
+          cpus: '0.25'
+          memory: 128M
+        reservations:
+          cpus: '0.10'
+          memory: 32M
+    environment:
+      - REDIS_ADDR=redis://cache:6379
+      - REDIS_EXPORTER_LOG_FORMAT=json
+    expose:
+      - "9121"
+    logging:
+      driver: json-file
+      options:
+        max-size: "50m"
+        max-file: "6"
+
   dozzle:
     image: amir20/dozzle:latest
     restart: unless-stopped
