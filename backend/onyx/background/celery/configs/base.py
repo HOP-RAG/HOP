@@ -38,7 +38,7 @@ broker_url = f"{REDIS_SCHEME}://{CELERY_PASSWORD_PART}{REDIS_HOST}:{REDIS_PORT}/
 
 broker_connection_retry_on_startup = True
 broker_pool_limit = CELERY_BROKER_POOL_LIMIT
-
+#rastastas
 # redis broker settings
 # https://docs.celeryq.dev/projects/kombu/en/stable/reference/kombu.transport.redis.html
 broker_transport_options = {
