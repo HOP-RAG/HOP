@@ -4,6 +4,7 @@ import time
 
 import requests
 
+from ee.onyx.server.control_plane import is_control_plane_configured
 from ee.onyx.server.tenants.access import generate_data_plane_token
 from onyx.configs.app_configs import CONTROL_PLANE_API_BASE_URL
 from onyx.configs.app_configs import DEV_MODE
@@ -29,6 +30,10 @@ def fetch_usage_limit_overrides() -> dict[str, TenantUsageLimitOverrides] | None
         Dictionary mapping tenant_id to their specific limit overrides.
         Returns empty dict on any error (falls back to defaults).
     """
+    if not is_control_plane_configured(CONTROL_PLANE_API_BASE_URL):
+        logger.info("Control plane not configured, skipping usage limit overrides")
+        return None
+
     try:
         token = generate_data_plane_token()
         headers = {
@@ -114,6 +119,8 @@ def get_tenant_usage_limit_overrides(
     """
 
     if DEV_MODE:  # in dev mode, we return unlimited limits for all tenants
+        return unlimited(tenant_id)
+    if not is_control_plane_configured(CONTROL_PLANE_API_BASE_URL):
         return unlimited(tenant_id)
 
     global _tenant_usage_limit_overrides

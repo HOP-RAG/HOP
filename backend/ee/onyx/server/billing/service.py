@@ -15,6 +15,7 @@ from typing import Literal
 import httpx
 
 from ee.onyx.configs.app_configs import CLOUD_DATA_PLANE_URL
+from ee.onyx.server.control_plane import is_control_plane_configured
 from ee.onyx.server.billing.models import BillingInformationResponse
 from ee.onyx.server.billing.models import CreateCheckoutSessionResponse
 from ee.onyx.server.billing.models import CreateCustomerPortalSessionResponse
@@ -31,6 +32,12 @@ logger = setup_logger()
 
 # HTTP request timeout for billing service calls
 _REQUEST_TIMEOUT = 30.0
+
+
+def _is_multi_tenant_without_control_plane() -> bool:
+    return MULTI_TENANT and not is_control_plane_configured(
+        CONTROL_PLANE_API_BASE_URL
+    )
 
 
 def _get_proxy_headers(license_data: str | None) -> dict[str, str]:
@@ -96,6 +103,13 @@ async def _make_billing_request(
     Raises:
         OnyxError: If request fails
     """
+    if _is_multi_tenant_without_control_plane():
+        if path == "/billing-information":
+            return {"subscribed": False}
+        raise OnyxError(
+            OnyxErrorCode.NOT_IMPLEMENTED,
+            "Billing is disabled when no control plane is configured.",
+        )
 
     base_url = _get_base_url()
     url = f"{base_url}{path}"

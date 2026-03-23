@@ -10,6 +10,7 @@ from sqlalchemy import select
 from sqlalchemy.orm import Session
 
 from ee.onyx.configs.app_configs import HUBSPOT_TRACKING_URL
+from ee.onyx.server.control_plane import is_control_plane_configured
 from ee.onyx.server.tenants.access import generate_data_plane_token
 from ee.onyx.server.tenants.models import TenantByDomainResponse
 from ee.onyx.server.tenants.models import TenantCreationPayload
@@ -184,6 +185,10 @@ async def provision_tenant(tenant_id: str, email: str) -> None:
 async def notify_control_plane(
     tenant_id: str, email: str, referral_source: str | None = None
 ) -> None:
+    if not is_control_plane_configured(CONTROL_PLANE_API_BASE_URL):
+        logger.info("Control plane not configured, skipping tenant creation sync")
+        return
+
     logger.info("Fetching billing information")
     token = generate_data_plane_token()
     headers = {
@@ -534,6 +539,10 @@ async def submit_to_hubspot(
 
 
 async def delete_user_from_control_plane(tenant_id: str, email: str) -> None:
+    if not is_control_plane_configured(CONTROL_PLANE_API_BASE_URL):
+        logger.info("Control plane not configured, skipping tenant deletion sync")
+        return
+
     token = generate_data_plane_token()
     headers = {
         "Authorization": f"Bearer {token}",
@@ -568,6 +577,10 @@ def get_tenant_by_domain_from_control_plane(
     Returns:
         A dictionary containing tenant information if found, None otherwise
     """
+    if not is_control_plane_configured(CONTROL_PLANE_API_BASE_URL):
+        logger.info("Control plane not configured, skipping tenant domain lookup")
+        return None
+
     token = generate_data_plane_token()
     headers = {
         "Authorization": f"Bearer {token}",

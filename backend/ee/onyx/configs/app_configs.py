@@ -114,9 +114,36 @@ STRIPE_SECRET_KEY = os.environ.get("STRIPE_SECRET_KEY")
 JWT_PUBLIC_KEY_URL: str | None = os.getenv("JWT_PUBLIC_KEY_URL", None)
 
 
-# Super Users
-SUPER_USERS = json.loads(os.environ.get("SUPER_USERS", "[]"))
-SUPER_CLOUD_API_KEY = os.environ.get("SUPER_CLOUD_API_KEY", "api_key")
+def _parse_super_users(raw_super_users: str | None) -> list[str]:
+    if not raw_super_users:
+        return []
+
+    try:
+        parsed_super_users = json.loads(raw_super_users)
+        if isinstance(parsed_super_users, list):
+            return [
+                str(email).strip().lower()
+                for email in parsed_super_users
+                if str(email).strip()
+            ]
+    except json.JSONDecodeError:
+        pass
+
+    return [
+        email.strip().lower()
+        for email in raw_super_users.split(",")
+        if email.strip()
+    ]
+
+
+# Platform Admins
+SUPER_USERS = _parse_super_users(os.environ.get("SUPER_USERS"))
+PLATFORM_ADMIN_API_KEY = os.environ.get(
+    "PLATFORM_ADMIN_API_KEY",
+    os.environ.get("SUPER_CLOUD_API_KEY", "api_key"),
+)
+# Backwards compatibility for older code/configs that still reference the old name.
+SUPER_CLOUD_API_KEY = PLATFORM_ADMIN_API_KEY
 
 POSTHOG_API_KEY = os.environ.get("POSTHOG_API_KEY")
 POSTHOG_HOST = os.environ.get("POSTHOG_HOST") or "https://us.i.posthog.com"

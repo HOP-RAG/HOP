@@ -1,7 +1,7 @@
 from fastapi import APIRouter
 from fastapi import Depends
 
-from ee.onyx.auth.users import current_cloud_superuser
+from ee.onyx.auth.users import current_platform_admin
 from onyx.background.celery.apps.client import celery_app as client_app
 from onyx.configs.constants import OnyxCeleryTask
 from onyx.db.models import User
@@ -17,7 +17,7 @@ router = APIRouter(prefix="/evals")
 @router.post("/eval_run", response_model=EvalRunAck)
 def eval_run(
     request: EvalConfigurationOptions,
-    user: User = Depends(current_cloud_superuser),  # noqa: ARG001
+    user: User = Depends(current_platform_admin),  # noqa: ARG001
 ) -> EvalRunAck:
     """
     Run an evaluation with the given message and optional dataset.
