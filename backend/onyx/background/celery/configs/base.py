@@ -38,7 +38,7 @@ broker_url = f"{REDIS_SCHEME}://{CELERY_PASSWORD_PART}{REDIS_HOST}:{REDIS_PORT}/
 
 broker_connection_retry_on_startup = True
 broker_pool_limit = CELERY_BROKER_POOL_LIMIT
-
+#rastastas
 # redis broker settings
 # https://docs.celeryq.dev/projects/kombu/en/stable/reference/kombu.transport.redis.html
 broker_transport_options = {
@@ -51,6 +51,11 @@ broker_transport_options = {
     "socket_keepalive_options": REDIS_SOCKET_KEEPALIVE_OPTIONS,
 }
 # endregion
+
+# Required for broker event consumers such as celery-exporter. This enables
+# worker/task lifecycle events without relying on runtime `enable_events`.
+worker_send_task_events = True
+task_send_sent_event = True
 
 # redis backend settings
 # https://docs.celeryq.dev/en/stable/userguide/configuration.html#redis-backend-settings
