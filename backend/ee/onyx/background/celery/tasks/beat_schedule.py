@@ -23,18 +23,18 @@ ee_beat_system_tasks: list[dict] = []
 
 ee_beat_task_templates: list[dict] = []
 
+usage_report_task_template = {
+    "name": "autogenerate-usage-report",
+    "task": OnyxCeleryTask.GENERATE_USAGE_REPORT_TASK,
+    "schedule": timedelta(days=30),
+    "options": {
+        "priority": OnyxCeleryPriority.MEDIUM,
+        "expires": BEAT_EXPIRES_DEFAULT,
+    },
+}
+
 if is_control_plane_configured():
-    ee_beat_task_templates.append(
-        {
-            "name": "autogenerate-usage-report",
-            "task": OnyxCeleryTask.GENERATE_USAGE_REPORT_TASK,
-            "schedule": timedelta(days=30),
-            "options": {
-                "priority": OnyxCeleryPriority.MEDIUM,
-                "expires": BEAT_EXPIRES_DEFAULT,
-            },
-        }
-    )
+    ee_beat_task_templates.append(usage_report_task_template)
 
 ee_beat_task_templates.extend(
     [
@@ -65,15 +65,6 @@ ee_tasks_to_schedule: list[dict] = []
 if not MULTI_TENANT:
     ee_tasks_to_schedule = [
         {
-            "name": "autogenerate-usage-report",
-            "task": OnyxCeleryTask.GENERATE_USAGE_REPORT_TASK,
-            "schedule": timedelta(days=30),  # TODO: change this to config flag
-            "options": {
-                "priority": OnyxCeleryPriority.MEDIUM,
-                "expires": BEAT_EXPIRES_DEFAULT,
-            },
-        },
-        {
             "name": "check-ttl-management",
             "task": OnyxCeleryTask.CHECK_TTL_MANAGEMENT_TASK,
             "schedule": timedelta(hours=CHECK_TTL_MANAGEMENT_TASK_FREQUENCY_IN_HOURS),
@@ -93,6 +84,9 @@ if not MULTI_TENANT:
             },
         },
     ]
+
+    if is_control_plane_configured():
+        ee_tasks_to_schedule.insert(0, usage_report_task_template)
 
 
 def get_cloud_tasks_to_schedule(beat_multiplier: float) -> list[dict[str, Any]]:

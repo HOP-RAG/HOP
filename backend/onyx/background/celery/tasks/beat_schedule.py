@@ -1,4 +1,5 @@
 import copy
+import os
 from datetime import timedelta
 from typing import Any
 
@@ -28,7 +29,22 @@ BEAT_EXPIRES_DEFAULT = 15 * 60  # 15 minutes (in seconds)
 # hack to slow down task dispatch in the cloud until
 # we have a better implementation (backpressure, etc)
 # Note that DynamicTenantScheduler can adjust the runtime value for this via Redis
-CLOUD_BEAT_MULTIPLIER_DEFAULT = 8.0
+
+
+def _get_cloud_beat_multiplier_default() -> float:
+    raw_value = os.environ.get("CLOUD_BEAT_MULTIPLIER_DEFAULT")
+    if raw_value is None or not raw_value.strip():
+        return 8.0
+
+    try:
+        parsed_value = float(raw_value)
+    except ValueError:
+        return 8.0
+
+    return parsed_value if parsed_value > 0 else 8.0
+
+
+CLOUD_BEAT_MULTIPLIER_DEFAULT = _get_cloud_beat_multiplier_default()
 CLOUD_DOC_PERMISSION_SYNC_MULTIPLIER_DEFAULT = 1.0
 
 # tasks that run in either self-hosted on cloud
