@@ -1,7 +1,7 @@
 # VictoriaMetrics scrape configuration
 # Compatible with Prometheus scrape_configs format.
 #
-# Exporter targets will be added here as they are deployed
+# Exporter targets are enabled here as they are deployed
 # (see issues #84, #85, #86).
 
 global:
@@ -32,7 +32,7 @@ scrape_configs:
   #     - targets: ["celery-exporter:9808"]
 
   # FastAPI /metrics endpoint (#86)
-  # - job_name: fastapi
-  #   static_configs:
-  #     - targets: ["api_server:8080"]
-  #   metrics_path: /metrics
+  - job_name: fastapi
+    metrics_path: /metrics
+    static_configs:
+      - targets: ["api_server:8080"]
