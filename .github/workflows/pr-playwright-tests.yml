@@ -4,17 +4,20 @@ concurrency:
   cancel-in-progress: true
 
 on:
-  merge_group:
-  pull_request:
-    branches:
-      - main
-      - "release/**"
-  push:
-    tags:
-      - "v*.*.*"
-    # TODO: Remove this if we enable merge-queues for release branches.
-    branches:
-      - "release/**"
+  # Disabled: no integration secrets configured in GitHub.
+  # Re-enable by uncommenting the triggers below.
+  # merge_group:
+  # pull_request:
+  #   branches:
+  #     - main
+  #     - "release/**"
+  # push:
+  #   tags:
+  #     - "v*.*.*"
+  #   # TODO: Remove this if we enable merge-queues for release branches.
+  #   branches:
+  #     - "release/**"
+  workflow_dispatch:
 
 permissions:
   contents: read
