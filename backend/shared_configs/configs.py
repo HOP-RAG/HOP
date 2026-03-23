@@ -1,3 +1,4 @@
+import logging
 import os
 from typing import Any
 from typing import List
@@ -75,6 +76,44 @@ DEV_LOGGING_ENABLED = os.environ.get("DEV_LOGGING_ENABLED", "").lower() == "true
 # notset, debug, info, notice, warning, error, or critical
 LOG_LEVEL = os.environ.get("LOG_LEVEL") or "info"
 
+THIRD_PARTY_ANALYTICS_ENABLED = (
+    os.environ.get(
+        "ENABLE_THIRD_PARTY_ANALYTICS",
+        os.environ.get("NEXT_PUBLIC_ENABLE_THIRD_PARTY_ANALYTICS", "false"),
+    ).lower()
+    == "true"
+)
+
+_configured_third_party_analytics_env_vars = [
+    env_var
+    for env_var in (
+        "SENTRY_DSN",
+        "NEXT_PUBLIC_SENTRY_DSN",
+        "NEXT_PUBLIC_POSTHOG_KEY",
+        "POSTHOG_API_KEY",
+        "MARKETING_POSTHOG_API_KEY",
+        "NEXT_PUBLIC_GTM_ENABLED",
+        "CUSTOM_ANALYTICS_SECRET_KEY",
+        "HUBSPOT_TRACKING_URL",
+        "SENTRY_AUTH_TOKEN",
+    )
+    if os.environ.get(env_var)
+]
+
+_third_party_analytics_logger = logging.getLogger(__name__)
+if THIRD_PARTY_ANALYTICS_ENABLED:
+    _third_party_analytics_logger.warning(
+        "Third-party analytics opt-in is enabled. Review PostHog, Sentry, GTM, "
+        "custom analytics, and HubSpot configuration before using this in production."
+    )
+elif _configured_third_party_analytics_env_vars:
+    _third_party_analytics_logger.warning(
+        "Third-party analytics env vars are set but analytics remain disabled until "
+        "ENABLE_THIRD_PARTY_ANALYTICS or NEXT_PUBLIC_ENABLE_THIRD_PARTY_ANALYTICS is "
+        "explicitly set to true. Ignoring: %s",
+        ", ".join(_configured_third_party_analytics_env_vars),
+    )
+
 # Timeout for API-based embedding models
 # NOTE: does not apply for Google VertexAI, since the python client doesn't
 # allow us to specify a custom timeout
@@ -97,7 +136,9 @@ STRICT_CHUNK_TOKEN_LIMIT = (
 )
 
 # Set up Sentry integration (for error logging)
-SENTRY_DSN = os.environ.get("SENTRY_DSN")
+SENTRY_DSN = (
+    os.environ.get("SENTRY_DSN") if THIRD_PARTY_ANALYTICS_ENABLED else None
+)
 
 ENVIRONMENT = (os.environ.get("ENVIRONMENT") or "not_explicitly_set").lower()
 

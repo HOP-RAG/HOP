@@ -1,4 +1,5 @@
 import posthog from "posthog-js";
+import { POSTHOG_ENABLED } from "@/lib/constants";
 
 // ─── Event Registry ────────────────────────────────────────────────────────
 // All tracked event names. Add new events here to get type-safe tracking.
@@ -65,6 +66,10 @@ export function track<E extends AnalyticsEvent>(
     ? [event: E]
     : [event: E, properties: AnalyticsEventProperties[E]]
 ): void {
+  if (!POSTHOG_ENABLED) {
+    return;
+  }
+
   const [event, properties] = args as [E, Record<string, unknown>?];
   posthog.capture(event, properties ?? {});
 }

@@ -70,11 +70,24 @@ export const SERVER_SIDE_ONLY__PAID_ENTERPRISE_FEATURES_ENABLED =
 export const EE_ENABLED =
   process.env.NEXT_PUBLIC_ENABLE_PAID_EE_FEATURES?.toLowerCase() === "true";
 
+export const THIRD_PARTY_ANALYTICS_ENABLED =
+  process.env.NEXT_PUBLIC_ENABLE_THIRD_PARTY_ANALYTICS?.toLowerCase() ===
+  "true";
+
 export const CUSTOM_ANALYTICS_ENABLED = process.env.CUSTOM_ANALYTICS_SECRET_KEY
-  ? true
+  ? THIRD_PARTY_ANALYTICS_ENABLED
   : false;
 
+export const POSTHOG_ENABLED =
+  THIRD_PARTY_ANALYTICS_ENABLED &&
+  Boolean(process.env.NEXT_PUBLIC_POSTHOG_KEY);
+
+export const SENTRY_ENABLED =
+  THIRD_PARTY_ANALYTICS_ENABLED &&
+  Boolean(process.env.NEXT_PUBLIC_SENTRY_DSN);
+
 export const GTM_ENABLED =
+  THIRD_PARTY_ANALYTICS_ENABLED &&
   process.env.NEXT_PUBLIC_GTM_ENABLED?.toLowerCase() === "true";
 
 export const NEXT_PUBLIC_CLOUD_ENABLED =

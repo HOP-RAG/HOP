@@ -1,5 +1,8 @@
 import json
 import os
+import logging
+
+from shared_configs.configs import THIRD_PARTY_ANALYTICS_ENABLED
 
 
 #####
@@ -145,15 +148,41 @@ PLATFORM_ADMIN_API_KEY = os.environ.get(
 # Backwards compatibility for older code/configs that still reference the old name.
 SUPER_CLOUD_API_KEY = PLATFORM_ADMIN_API_KEY
 
-POSTHOG_API_KEY = os.environ.get("POSTHOG_API_KEY")
+_logger = logging.getLogger(__name__)
+
+_raw_posthog_api_key = os.environ.get("POSTHOG_API_KEY")
 POSTHOG_HOST = os.environ.get("POSTHOG_HOST") or "https://us.i.posthog.com"
 POSTHOG_DEBUG_LOGS_ENABLED = (
     os.environ.get("POSTHOG_DEBUG_LOGS_ENABLED", "").lower() == "true"
 )
+POSTHOG_API_KEY = _raw_posthog_api_key if THIRD_PARTY_ANALYTICS_ENABLED else None
 
-MARKETING_POSTHOG_API_KEY = os.environ.get("MARKETING_POSTHOG_API_KEY")
+_raw_marketing_posthog_api_key = os.environ.get("MARKETING_POSTHOG_API_KEY")
+MARKETING_POSTHOG_API_KEY = (
+    _raw_marketing_posthog_api_key if THIRD_PARTY_ANALYTICS_ENABLED else None
+)
 
-HUBSPOT_TRACKING_URL = os.environ.get("HUBSPOT_TRACKING_URL")
+_raw_hubspot_tracking_url = os.environ.get("HUBSPOT_TRACKING_URL")
+HUBSPOT_TRACKING_URL = (
+    _raw_hubspot_tracking_url if THIRD_PARTY_ANALYTICS_ENABLED else None
+)
+
+if not THIRD_PARTY_ANALYTICS_ENABLED:
+    ignored_analytics_env_vars = [
+        env_var
+        for env_var, value in (
+            ("POSTHOG_API_KEY", _raw_posthog_api_key),
+            ("MARKETING_POSTHOG_API_KEY", _raw_marketing_posthog_api_key),
+            ("HUBSPOT_TRACKING_URL", _raw_hubspot_tracking_url),
+        )
+        if value
+    ]
+    if ignored_analytics_env_vars:
+        _logger.warning(
+            "Ignoring EE third-party analytics configuration because the global "
+            "third-party analytics opt-in is disabled: %s",
+            ", ".join(ignored_analytics_env_vars),
+        )
 
 GATED_TENANTS_KEY = "gated_tenants"
 
