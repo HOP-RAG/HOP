@@ -732,6 +732,15 @@ ensure_file "${INSTALL_ROOT}/deployment/env.template" \
 ensure_file "${INSTALL_ROOT}/data/nginx/app.conf.template" \
     "$NGINX_BASE_URL/app.conf.template" "nginx/app.conf.template" || exit 1
 
+ensure_file "${INSTALL_ROOT}/data/nginx/security_headers_common.conf.inc" \
+    "$NGINX_BASE_URL/security_headers_common.conf.inc" "nginx/security_headers_common.conf.inc" || exit 1
+
+ensure_file "${INSTALL_ROOT}/data/nginx/security_headers_embeddable.conf.inc" \
+    "$NGINX_BASE_URL/security_headers_embeddable.conf.inc" "nginx/security_headers_embeddable.conf.inc" || exit 1
+
+ensure_file "${INSTALL_ROOT}/data/nginx/security_headers_hsts.conf.inc" \
+    "$NGINX_BASE_URL/security_headers_hsts.conf.inc" "nginx/security_headers_hsts.conf.inc" || exit 1
+
 ensure_file "${INSTALL_ROOT}/data/nginx/run-nginx.sh" \
     "$NGINX_BASE_URL/run-nginx.sh" "nginx/run-nginx.sh" || exit 1
 chmod +x "${INSTALL_ROOT}/data/nginx/run-nginx.sh"

@@ -35,6 +35,8 @@ server {
 
     # Match both /api/* and /openapi.json in a single rule
     location ~ ^/(api|openapi.json)(/.*)?$ {
+        include /etc/nginx/conf.d/security_headers_common.conf.inc;
+
         # Rewrite /api prefixed matched paths
         rewrite ^/api(/.*)$ $1 break;
 
@@ -61,7 +63,35 @@ server {
         proxy_pass http://api_server;
     }
 
+    location ^~ /nrf/side-panel {
+        # Allow the Chrome extension side panel to embed this route while
+        # keeping the rest of the app protected against clickjacking.
+        include /etc/nginx/conf.d/security_headers_embeddable.conf.inc;
+
+        # misc headers
+        proxy_set_header X-Real-IP $remote_addr;
+        proxy_set_header X-Forwarded-For $proxy_add_x_forwarded_for;
+        proxy_set_header X-Forwarded-Proto $scheme;
+        proxy_set_header X-Forwarded-Host $host;
+        proxy_set_header X-Forwarded-Port $server_port;
+        proxy_set_header Host $host;
+
+        proxy_http_version 1.1;
+
+        # timeout settings
+        proxy_connect_timeout ${NGINX_PROXY_CONNECT_TIMEOUT}s;
+        proxy_send_timeout ${NGINX_PROXY_SEND_TIMEOUT}s;
+        proxy_read_timeout ${NGINX_PROXY_READ_TIMEOUT}s;
+
+        # we don't want nginx trying to do something clever with
+        # redirects, we set the Host: header above already.
+        proxy_redirect off;
+        proxy_pass http://web_server;
+    }
+
     location / {
+        include /etc/nginx/conf.d/security_headers_common.conf.inc;
+
         # misc headers
         proxy_set_header X-Real-IP $remote_addr;
         proxy_set_header X-Forwarded-For $proxy_add_x_forwarded_for;
