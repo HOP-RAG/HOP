@@ -14,17 +14,15 @@ scrape_configs:
     static_configs:
       - targets: ["localhost:8428"]
 
-  # Uncomment as exporters are deployed:
-
   # PostgreSQL exporter (#84)
-  # - job_name: postgres
-  #   static_configs:
-  #     - targets: ["postgres-exporter:9187"]
+  - job_name: postgres
+    static_configs:
+      - targets: ["postgres-exporter:9187"]
 
   # Redis exporter (#84)
-  # - job_name: redis
-  #   static_configs:
-  #     - targets: ["redis-exporter:9121"]
+  - job_name: redis
+    static_configs:
+      - targets: ["redis-exporter:9121"]
 
   # Celery exporter (#85)
   # - job_name: celery
