@@ -52,6 +52,11 @@ broker_transport_options = {
 }
 # endregion
 
+# Required for broker event consumers such as celery-exporter. This enables
+# worker/task lifecycle events without relying on runtime `enable_events`.
+worker_send_task_events = True
+task_send_sent_event = True
+
 # redis backend settings
 # https://docs.celeryq.dev/en/stable/userguide/configuration.html#redis-backend-settings
 
