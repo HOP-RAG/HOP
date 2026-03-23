@@ -240,6 +240,58 @@ class TestMultiTenantInviteLogic:
         # Verify invite check WAS called (user_count > 0)
         mock_verify_invited.assert_called_once_with(mock_user_create.email)
 
+    @patch("onyx.auth.users.remove_user_from_invited_admin_users")
+    @patch("onyx.auth.users.get_default_admin_user_emails")
+    @patch("onyx.auth.users.SQLAlchemyUserAdminDB")
+    @patch("onyx.auth.users.is_disposable_email", return_value=False)
+    @patch("onyx.auth.users.verify_email_domain")
+    @patch("onyx.auth.users.fetch_ee_implementation_or_noop")
+    @patch("onyx.auth.users.get_async_session_context_manager")
+    @patch("onyx.auth.users.get_user_count", new_callable=AsyncMock)
+    @patch("onyx.auth.users.verify_email_is_invited")
+    @patch("onyx.auth.users.MULTI_TENANT", True)
+    @patch("onyx.auth.users.CURRENT_TENANT_ID_CONTEXTVAR")
+    @pytest.mark.asyncio
+    async def test_invited_company_admin_is_created_as_admin(
+        self,
+        mock_context_var: MagicMock,
+        mock_verify_invited: MagicMock,
+        mock_get_user_count: MagicMock,
+        mock_session_manager: MagicMock,
+        mock_fetch_ee: MagicMock,
+        mock_verify_domain: MagicMock,  # noqa: ARG002
+        mock_is_disposable: MagicMock,  # noqa: ARG002
+        mock_sql_alchemy_db: MagicMock,
+        mock_get_default_admin_user_emails: MagicMock,
+        mock_remove_invited_admin_users: MagicMock,
+        mock_user_create: UserCreate,
+        mock_async_session: MagicMock,
+    ) -> None:
+        mock_get_user_count.side_effect = [5, 5]
+        mock_fetch_ee.return_value = AsyncMock(return_value="tenant_123")
+        mock_session_manager.return_value = _AsyncSessionContextManager(
+            mock_async_session
+        )
+        mock_context_var.set.return_value = MagicMock()
+        mock_get_default_admin_user_emails.return_value = [mock_user_create.email]
+
+        mock_user_db = MagicMock()
+        mock_user_db.create = AsyncMock(return_value=MagicMock(id="test-id"))
+        mock_sql_alchemy_db.return_value = mock_user_db
+
+        user_manager = UserManager(MagicMock())
+        _mock_user_manager_methods(user_manager)
+
+        try:
+            await user_manager.create(mock_user_create)
+        except Exception:
+            pass
+
+        mock_verify_invited.assert_called_once_with(mock_user_create.email)
+        assert mock_user_create.role is not None
+        assert mock_user_create.role.value == "admin"
+        mock_remove_invited_admin_users.assert_called_once_with(mock_user_create.email)
+
 
 class TestSingleTenantInviteLogic:
     """Test invite logic for single-tenant environments."""

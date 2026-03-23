@@ -73,6 +73,7 @@ from onyx.auth.api_key import get_hashed_api_key_from_request
 from onyx.auth.disposable_email_validator import is_disposable_email
 from onyx.auth.email_utils import send_forgot_password_email
 from onyx.auth.email_utils import send_user_verification_email
+from onyx.auth.invited_users import remove_user_from_invited_admin_users
 from onyx.auth.invited_users import get_invited_users
 from onyx.auth.invited_users import remove_user_from_invited_users
 from onyx.auth.jwt import verify_jwt_token
@@ -556,6 +557,7 @@ class UserManager(UUIDIDMixin, BaseUserManager[User, uuid.UUID]):
                 if user_created:
                     await self._assign_default_pinned_assistants(user, db_session)
                 remove_user_from_invited_users(user_create.email)
+                remove_user_from_invited_admin_users(user_create.email)
         finally:
             CURRENT_TENANT_ID_CONTEXTVAR.reset(token)
         return user
@@ -772,6 +774,7 @@ class UserManager(UUIDIDMixin, BaseUserManager[User, uuid.UUID]):
                 await self.user_db.update(user, {"oidc_expiry": None})
                 user.oidc_expiry = None  # type: ignore
             remove_user_from_invited_users(user.email)
+            remove_user_from_invited_admin_users(user.email)
             if token:
                 CURRENT_TENANT_ID_CONTEXTVAR.reset(token)
 
