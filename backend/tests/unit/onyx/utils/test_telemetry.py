@@ -100,3 +100,70 @@ def test_mt_cloud_identify_calls_identify_user_when_multi_tenant(
         "12345678-1234-1234-1234-123456789abc",
         {"email": "user@example.com"},
     )
+
+
+def test_optional_telemetry_noop_when_disabled(monkeypatch: Any) -> None:
+    post_mock = Mock()
+    thread_mock = Mock()
+    uuid_mock = Mock()
+
+    monkeypatch.setattr("onyx.utils.telemetry.DISABLE_TELEMETRY", True)
+    monkeypatch.setattr("onyx.utils.telemetry.requests.post", post_mock)
+    monkeypatch.setattr("onyx.utils.telemetry.threading.Thread", thread_mock)
+    monkeypatch.setattr("onyx.utils.telemetry.get_or_generate_uuid", uuid_mock)
+
+    telemetry_utils.optional_telemetry(
+        record_type=telemetry_utils.RecordType.USAGE,
+        data={"action": "test"},
+    )
+
+    post_mock.assert_not_called()
+    thread_mock.assert_not_called()
+    uuid_mock.assert_not_called()
+
+
+def test_optional_telemetry_starts_background_send_when_enabled(
+    monkeypatch: Any,
+) -> None:
+    post_mock = Mock()
+    thread_start_mock = Mock()
+    uuid_mock = Mock(return_value="uuid-123")
+    thread_target: Any = None
+
+    class FakeThread:
+        def __init__(self, target: Any, daemon: bool) -> None:
+            nonlocal thread_target
+            thread_target = target
+            assert daemon is True
+
+        def start(self) -> None:
+            thread_start_mock()
+            assert thread_target is not None
+            thread_target()
+
+    monkeypatch.setattr("onyx.utils.telemetry.DISABLE_TELEMETRY", False)
+    monkeypatch.setattr("onyx.utils.telemetry.MULTI_TENANT", False)
+    monkeypatch.setattr("onyx.utils.telemetry.ENTERPRISE_EDITION_ENABLED", False)
+    monkeypatch.setattr("onyx.utils.telemetry.get_or_generate_uuid", uuid_mock)
+    monkeypatch.setattr("onyx.utils.telemetry.requests.post", post_mock)
+    monkeypatch.setattr("onyx.utils.telemetry.threading.Thread", FakeThread)
+
+    telemetry_utils.optional_telemetry(
+        record_type=telemetry_utils.RecordType.USAGE,
+        data={"action": "test"},
+        user_id="user-1",
+    )
+
+    thread_start_mock.assert_called_once()
+    uuid_mock.assert_called_once()
+    post_mock.assert_called_once_with(
+        "https://telemetry.onyx.app/anonymous_telemetry",
+        headers={"Content-Type": "application/json"},
+        json={
+            "data": {"action": "test"},
+            "record": telemetry_utils.RecordType.USAGE,
+            "user_id": "user-1",
+            "customer_uuid": "uuid-123",
+            "is_cloud": False,
+        },
+    )
