@@ -97,6 +97,15 @@ async def get_or_provision_tenant(
             "This account has not been invited to a company yet.",
         )
 
+    from onyx.db.company import get_company_by_tenant_id
+
+    company = get_company_by_tenant_id(tenant_id)
+    if company is not None and not company.is_active:
+        raise OnyxError(
+            OnyxErrorCode.INSUFFICIENT_PERMISSIONS,
+            "This company is inactive.",
+        )
+
     if referral_source and request:
         await submit_to_hubspot(email, referral_source, request)
 
@@ -630,7 +639,7 @@ async def get_available_tenant() -> str | None:
             return None
 
 
-async def setup_tenant(tenant_id: str) -> None:
+async def setup_tenant(tenant_id: str, *, run_migrations: bool = True) -> None:
     """
     Set up a tenant with all necessary configurations.
     This is a centralized function that handles all tenant setup logic.
@@ -639,11 +648,12 @@ async def setup_tenant(tenant_id: str) -> None:
     try:
         token = CURRENT_TENANT_ID_CONTEXTVAR.set(tenant_id)
 
-        # Run Alembic migrations in a way that isolates it from the current event loop
-        # Create a new event loop for this synchronous operation
-        loop = asyncio.get_event_loop()
-        # Use run_in_executor which properly isolates the thread execution
-        await loop.run_in_executor(None, lambda: run_alembic_migrations(tenant_id))
+        if run_migrations:
+            # Run Alembic migrations in a way that isolates it from the current event loop
+            # Create a new event loop for this synchronous operation
+            loop = asyncio.get_event_loop()
+            # Use run_in_executor which properly isolates the thread execution
+            await loop.run_in_executor(None, lambda: run_alembic_migrations(tenant_id))
 
         # Configure the tenant with default settings
         with get_session_with_tenant(tenant_id=tenant_id) as db_session:

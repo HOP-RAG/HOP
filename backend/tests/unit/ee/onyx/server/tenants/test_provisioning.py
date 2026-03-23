@@ -32,9 +32,11 @@ class _FakeEventLoop:
 @patch("ee.onyx.server.tenants.provisioning.create_tenant", new_callable=AsyncMock)
 @patch("ee.onyx.server.tenants.provisioning.get_available_tenant", new_callable=AsyncMock)
 @patch("ee.onyx.server.tenants.provisioning.submit_to_hubspot", new_callable=AsyncMock)
+@patch("onyx.db.company.get_company_by_tenant_id")
 @patch("ee.onyx.server.tenants.provisioning.get_tenant_id_for_email")
 async def test_get_or_provision_tenant_returns_existing_mapping(
     mock_get_tenant_id: MagicMock,
+    mock_get_company_by_tenant_id: MagicMock,
     mock_submit_to_hubspot: AsyncMock,
     mock_get_available_tenant: AsyncMock,
     mock_create_tenant: AsyncMock,
@@ -44,6 +46,7 @@ async def test_get_or_provision_tenant_returns_existing_mapping(
 
     request = MagicMock()
     mock_get_tenant_id.return_value = "tenant_123"
+    mock_get_company_by_tenant_id.return_value = None
 
     tenant_id = await get_or_provision_tenant(
         "member@example.com",
@@ -66,9 +69,11 @@ async def test_get_or_provision_tenant_returns_existing_mapping(
 @patch("ee.onyx.server.tenants.provisioning.create_tenant", new_callable=AsyncMock)
 @patch("ee.onyx.server.tenants.provisioning.get_available_tenant", new_callable=AsyncMock)
 @patch("ee.onyx.server.tenants.provisioning.submit_to_hubspot", new_callable=AsyncMock)
+@patch("onyx.db.company.get_company_by_tenant_id")
 @patch("ee.onyx.server.tenants.provisioning.get_tenant_id_for_email")
 async def test_get_or_provision_tenant_rejects_unknown_email_without_mapping(
     mock_get_tenant_id: MagicMock,
+    mock_get_company_by_tenant_id: MagicMock,
     mock_submit_to_hubspot: AsyncMock,
     mock_get_available_tenant: AsyncMock,
     mock_create_tenant: AsyncMock,
@@ -77,6 +82,7 @@ async def test_get_or_provision_tenant_rejects_unknown_email_without_mapping(
     from ee.onyx.server.tenants.provisioning import get_or_provision_tenant
 
     mock_get_tenant_id.side_effect = exceptions.UserNotExists()
+    mock_get_company_by_tenant_id.return_value = None
 
     with pytest.raises(OnyxError) as exc_info:
         await get_or_provision_tenant("member@example.com")
@@ -86,6 +92,28 @@ async def test_get_or_provision_tenant_rejects_unknown_email_without_mapping(
     mock_get_available_tenant.assert_not_called()
     mock_create_tenant.assert_not_called()
     mock_notify_control_plane.assert_not_called()
+
+
+@pytest.mark.asyncio
+@patch("ee.onyx.server.tenants.provisioning.MULTI_TENANT", True)
+@patch("ee.onyx.server.tenants.provisioning.submit_to_hubspot", new_callable=AsyncMock)
+@patch("onyx.db.company.get_company_by_tenant_id")
+@patch("ee.onyx.server.tenants.provisioning.get_tenant_id_for_email")
+async def test_get_or_provision_tenant_rejects_inactive_company(
+    mock_get_tenant_id: MagicMock,
+    mock_get_company_by_tenant_id: MagicMock,
+    mock_submit_to_hubspot: AsyncMock,
+) -> None:
+    from ee.onyx.server.tenants.provisioning import get_or_provision_tenant
+
+    mock_get_tenant_id.return_value = "tenant_123"
+    mock_get_company_by_tenant_id.return_value = SimpleNamespace(is_active=False)
+
+    with pytest.raises(OnyxError) as exc_info:
+        await get_or_provision_tenant("member@example.com")
+
+    assert exc_info.value.error_code is OnyxErrorCode.INSUFFICIENT_PERMISSIONS
+    mock_submit_to_hubspot.assert_not_called()
 
 
 @pytest.mark.asyncio

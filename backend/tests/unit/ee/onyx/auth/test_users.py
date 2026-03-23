@@ -52,6 +52,26 @@ def test_parse_super_users_supports_legacy_json_list() -> None:
     ]
 
 
+def test_get_default_admin_user_emails_includes_invited_company_admins(
+    monkeypatch: pytest.MonkeyPatch,
+) -> None:
+    from ee.onyx.auth.users import get_default_admin_user_emails_
+
+    monkeypatch.setattr(
+        "ee.onyx.auth.users.get_seed_config",
+        lambda: MagicMock(admin_user_emails=["SeedAdmin@example.com"]),
+    )
+    monkeypatch.setattr(
+        "ee.onyx.auth.users.get_invited_admin_users",
+        lambda: ["InvitedAdmin@example.com", "seedadmin@example.com"],
+    )
+
+    assert get_default_admin_user_emails_() == [
+        "seedadmin@example.com",
+        "invitedadmin@example.com",
+    ]
+
+
 @pytest.mark.asyncio
 async def test_current_platform_admin_rejects_invalid_api_key(
     monkeypatch: pytest.MonkeyPatch,

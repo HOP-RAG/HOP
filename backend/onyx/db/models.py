@@ -4465,6 +4465,38 @@ class PublicBase(DeclarativeBase):
     __abstract__ = True
 
 
+class Company(Base):
+    __tablename__ = "company"
+    __table_args__ = (
+        UniqueConstraint("tenant_id", name="uq_company_tenant_id"),
+        {"schema": "public"},
+    )
+
+    id: Mapped[UUID] = mapped_column(
+        PGUUID(as_uuid=True), primary_key=True, default=uuid4
+    )
+    tenant_id: Mapped[str] = mapped_column(String, nullable=False)
+    name: Mapped[str] = mapped_column(String, nullable=False)
+    domain: Mapped[str | None] = mapped_column(String, nullable=True)
+    is_active: Mapped[bool] = mapped_column(Boolean, nullable=False, default=True)
+    created_by: Mapped[str] = mapped_column(String, nullable=False)
+    created_at: Mapped[datetime.datetime] = mapped_column(
+        DateTime(timezone=True), server_default=func.now(), nullable=False
+    )
+    updated_at: Mapped[datetime.datetime] = mapped_column(
+        DateTime(timezone=True),
+        server_default=func.now(),
+        onupdate=func.now(),
+        nullable=False,
+    )
+
+    @validates("domain", "created_by")
+    def _normalize_lowercase(self, key: str, value: str | None) -> str | None:  # noqa: ARG002
+        if value is None:
+            return None
+        return value.lower()
+
+
 # Strictly keeps track of the tenant that a given user will authenticate to.
 class UserTenantMapping(Base):
     __tablename__ = "user_tenant_mapping"

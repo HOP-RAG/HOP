@@ -5,6 +5,7 @@ import jwt
 from fastapi import Depends
 from fastapi import Request
 
+from onyx.auth.invited_users import get_invited_admin_users
 from ee.onyx.configs.app_configs import PLATFORM_ADMIN_API_KEY
 from ee.onyx.configs.app_configs import SUPER_USERS
 from ee.onyx.server.seeding import get_seed_config
@@ -32,9 +33,21 @@ def verify_auth_setting() -> None:
 
 def get_default_admin_user_emails_() -> list[str]:
     seed_config = get_seed_config()
-    if seed_config and seed_config.admin_user_emails:
-        return seed_config.admin_user_emails
-    return []
+    admin_emails = list(seed_config.admin_user_emails) if (
+        seed_config and seed_config.admin_user_emails
+    ) else []
+    admin_emails.extend(get_invited_admin_users())
+
+    deduped_admin_emails: list[str] = []
+    seen_emails: set[str] = set()
+    for email in admin_emails:
+        normalized_email = email.lower()
+        if normalized_email in seen_emails:
+            continue
+        seen_emails.add(normalized_email)
+        deduped_admin_emails.append(normalized_email)
+
+    return deduped_admin_emails
 
 
 async def current_platform_admin(
