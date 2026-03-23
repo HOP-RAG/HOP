@@ -150,7 +150,6 @@ jobs:
           -o ServerAliveInterval=30 \
           -o ServerAliveCountMax=10 \
           "${DEPLOY_USER}@${DEPLOY_HOST}" bash -s -- \
-
             "$BRANCH" \
             "$PREFERRED_DEPLOY_DIR" \
             "$LEGACY_DEPLOY_DIR" \
