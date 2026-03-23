@@ -866,7 +866,17 @@ LOG_POSTGRES_CONN_COUNTS = (
     os.environ.get("LOG_POSTGRES_CONN_COUNTS", "").lower() == "true"
 )
 # Anonymous usage telemetry
-DISABLE_TELEMETRY = os.environ.get("DISABLE_TELEMETRY", "").lower() == "true"
+# Privacy-by-default: self-hosted deployments do not send telemetry unless
+# explicitly opted in. `DISABLE_TELEMETRY` is kept for backwards compatibility.
+ENABLE_ANONYMOUS_TELEMETRY = (
+    os.environ.get("ENABLE_ANONYMOUS_TELEMETRY", "").lower() == "true"
+)
+_raw_disable_telemetry = os.environ.get("DISABLE_TELEMETRY")
+DISABLE_TELEMETRY = (
+    _raw_disable_telemetry.lower() == "true"
+    if _raw_disable_telemetry is not None
+    else not ENABLE_ANONYMOUS_TELEMETRY
+)
 
 #####
 # Braintrust Configuration
