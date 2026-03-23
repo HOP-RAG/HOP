@@ -20,6 +20,7 @@ import {
   SvgMcp,
   SvgNetworkGraph,
   SvgOnyxOctagon,
+  SvgOrganization,
   SvgPaintBrush,
   SvgProgressBars,
   SvgSearchMenu,
@@ -178,6 +179,12 @@ export const ADMIN_ROUTES = {
     icon: SvgUser,
     title: "Users & Requests",
     sidebarLabel: "Users",
+  },
+  COMPANIES: {
+    path: "/admin/companies",
+    icon: SvgOrganization,
+    title: "Companies",
+    sidebarLabel: "Companies",
   },
   API_KEYS: {
     path: "/admin/api-key",

@@ -51,6 +51,7 @@ interface SidebarItemEntry {
 
 function buildItems(
   isCurator: boolean,
+  isPlatformAdmin: boolean,
   enableCloud: boolean,
   enableEnterprise: boolean,
   settings: CombinedSettings | null,
@@ -135,6 +136,9 @@ function buildItems(
 
   // 6. Organization (admin only)
   if (!isCurator) {
+    if (isPlatformAdmin) {
+      add(SECTIONS.ORGANIZATION, ADMIN_ROUTES.COMPANIES);
+    }
     if (hasSubscription) {
       add(SECTIONS.ORGANIZATION, ADMIN_ROUTES.BILLING);
     } else {
@@ -194,6 +198,7 @@ export default function AdminSidebar({ enableCloudSS }: AdminSidebarProps) {
   const { data: licenseData, isLoading: licenseLoading } = useLicense();
   const isCurator =
     user?.role === UserRole.CURATOR || user?.role === UserRole.GLOBAL_CURATOR;
+  const isPlatformAdmin = Boolean(user?.is_cloud_superuser);
   // Default to true while loading to avoid flashing "Upgrade Plan"
   const hasSubscriptionOrLicense =
     billingLoading || licenseLoading
@@ -208,6 +213,7 @@ export default function AdminSidebar({ enableCloudSS }: AdminSidebarProps) {
 
   const allItems = buildItems(
     isCurator,
+    isPlatformAdmin,
     enableCloudSS,
     enableEnterprise,
     settings,
