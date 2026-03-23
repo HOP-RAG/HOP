@@ -100,7 +100,7 @@ fi
 
 # Start the Code Interpreter container
 echo "Starting Code Interpreter container..."
-docker run --detach --name onyx_code_interpreter --publish 8000:8000 --user root -v /var/run/docker.sock:/var/run/docker.sock onyxdotapp/code-interpreter:latest bash ./entrypoint.sh code-interpreter-api
+docker run --detach --name onyx_code_interpreter --publish 8000:8000 --privileged onyxdotapp/code-interpreter:latest bash ./entrypoint.sh code-interpreter-api
 
 # Ensure alembic runs in the correct directory (backend/)
 PARENT_DIR="$(dirname "$SCRIPT_DIR")"

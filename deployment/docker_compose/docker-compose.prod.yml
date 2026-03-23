@@ -689,13 +689,14 @@ services:
       - path: .env
         required: false
 
-    # Below is needed for the `docker-out-of-docker` execution mode
-    user: root
-    volumes:
-      - /var/run/docker.sock:/var/run/docker.sock
+    # Use Docker-in-Docker by default so untrusted executions do not receive
+    # access to the host Docker daemon.
+    privileged: true
 
-    # uncomment below + comment out the above to use the `docker-in-docker` execution mode
-    # privileged: true
+    # Only use host Docker socket access in explicitly trusted environments.
+    # user: root
+    # volumes:
+    #   - /var/run/docker.sock:/var/run/docker.sock
 
 volumes:
   db_volume:
