@@ -640,14 +640,15 @@ services:
       - path: .env
         required: false
 
-    # Below is needed for the `docker-out-of-docker` execution mode
-    # For Linux rootless Docker, set DOCKER_SOCK_PATH=${XDG_RUNTIME_DIR}/docker.sock
-    user: root
-    volumes:
-      - ${DOCKER_SOCK_PATH:-/var/run/docker.sock}:/var/run/docker.sock
+    # Use Docker-in-Docker by default so untrusted executions do not receive
+    # access to the host Docker daemon.
+    privileged: true
 
-    # uncomment below + comment out the above to use the `docker-in-docker` execution mode
-    # privileged: true
+    # Only use host Docker socket access in explicitly trusted environments.
+    # For Linux rootless Docker, set DOCKER_SOCK_PATH=${XDG_RUNTIME_DIR}/docker.sock
+    # user: root
+    # volumes:
+    #   - ${DOCKER_SOCK_PATH:-/var/run/docker.sock}:/var/run/docker.sock
 
   # PRODUCTION: Uncomment the following certbot service for SSL certificate management
   # certbot:
