@@ -13,6 +13,7 @@ import {
   UserRole,
   ThemePreference,
 } from "@/lib/types";
+import { POSTHOG_ENABLED } from "@/lib/constants";
 import { getCurrentUser } from "@/lib/user";
 import { usePostHog } from "posthog-js/react";
 import { CombinedSettings } from "@/interfaces/settings";
@@ -102,6 +103,7 @@ export function UserProvider({
   }, [user, updatedSettings]);
 
   useEffect(() => {
+    if (!POSTHOG_ENABLED) return;
     if (!posthog) return;
 
     if (user?.id) {

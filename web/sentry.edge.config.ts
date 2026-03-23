@@ -5,7 +5,11 @@
 
 import * as Sentry from "@sentry/nextjs";
 
-if (process.env.NEXT_PUBLIC_SENTRY_DSN) {
+const sentryEnabled =
+  process.env.NEXT_PUBLIC_ENABLE_THIRD_PARTY_ANALYTICS?.toLowerCase() ===
+    "true" && Boolean(process.env.NEXT_PUBLIC_SENTRY_DSN);
+
+if (sentryEnabled) {
   Sentry.init({
     dsn: process.env.NEXT_PUBLIC_SENTRY_DSN,
     // Only capture unhandled exceptions

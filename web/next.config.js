@@ -1,6 +1,37 @@
 // Always require withSentryConfig
 const { withSentryConfig } = require("@sentry/nextjs");
 
+const thirdPartyAnalyticsEnabled =
+  process.env.NEXT_PUBLIC_ENABLE_THIRD_PARTY_ANALYTICS?.toLowerCase() ===
+  "true";
+const posthogEnabled =
+  thirdPartyAnalyticsEnabled && Boolean(process.env.NEXT_PUBLIC_POSTHOG_KEY);
+const sentryEnabled = Boolean(
+  thirdPartyAnalyticsEnabled &&
+    process.env.SENTRY_AUTH_TOKEN &&
+    process.env.NEXT_PUBLIC_SENTRY_DSN
+);
+const configuredThirdPartyAnalyticsEnvVars = [
+  "NEXT_PUBLIC_POSTHOG_KEY",
+  "NEXT_PUBLIC_SENTRY_DSN",
+  "NEXT_PUBLIC_GTM_ENABLED",
+  "CUSTOM_ANALYTICS_SECRET_KEY",
+  "POSTHOG_API_KEY",
+  "MARKETING_POSTHOG_API_KEY",
+  "HUBSPOT_TRACKING_URL",
+  "SENTRY_AUTH_TOKEN",
+].filter((envVar) => process.env[envVar]);
+
+if (thirdPartyAnalyticsEnabled) {
+  console.warn(
+    "[privacy] Third-party analytics opt-in is enabled. Review PostHog, Sentry, GTM, custom analytics, and HubSpot configuration before using this in production."
+  );
+} else if (configuredThirdPartyAnalyticsEnvVars.length > 0) {
+  console.warn(
+    `[privacy] Third-party analytics env vars are set but NEXT_PUBLIC_ENABLE_THIRD_PARTY_ANALYTICS is not true. Ignoring: ${configuredThirdPartyAnalyticsEnvVars.join(", ")}`
+  );
+}
+
 const cspHeader = `
     style-src 'self' 'unsafe-inline' https://fonts.googleapis.com;
     font-src 'self' https://fonts.gstatic.com;
@@ -78,17 +109,7 @@ const nextConfig = {
     ];
   },
   async rewrites() {
-    return [
-      {
-        source: "/ph_ingest/static/:path*",
-        destination: "https://us-assets.i.posthog.com/static/:path*",
-      },
-      {
-        source: "/ph_ingest/:path*",
-        destination: `${
-          process.env.NEXT_PUBLIC_POSTHOG_HOST || "https://us.i.posthog.com"
-        }/:path*`,
-      },
+    const rewrites = [
       {
         source: "/api/docs/:path*", // catch /api/docs and /api/docs/...
         destination: `${
@@ -108,6 +129,23 @@ const nextConfig = {
         }/openapi.json`,
       },
     ];
+
+    if (posthogEnabled) {
+      rewrites.unshift(
+        {
+          source: "/ph_ingest/static/:path*",
+          destination: "https://us-assets.i.posthog.com/static/:path*",
+        },
+        {
+          source: "/ph_ingest/:path*",
+          destination: `${
+            process.env.NEXT_PUBLIC_POSTHOG_HOST || "https://us.i.posthog.com"
+          }/:path*`,
+        }
+      );
+    }
+
+    return rewrites;
   },
   async redirects() {
     return [
@@ -161,10 +199,6 @@ const nextConfig = {
 // - With both configured: Capture errors and limited performance data
 
 // Determine if Sentry should be enabled
-const sentryEnabled = Boolean(
-  process.env.SENTRY_AUTH_TOKEN && process.env.NEXT_PUBLIC_SENTRY_DSN
-);
-
 // Sentry webpack plugin options
 const sentryWebpackPluginOptions = {
   org: process.env.SENTRY_ORG || "onyx-vl",

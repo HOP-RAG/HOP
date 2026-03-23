@@ -2,14 +2,13 @@
 import posthog from "posthog-js";
 import { PostHogProvider } from "posthog-js/react";
 import { useEffect } from "react";
-
-const isPostHogEnabled = !!process.env.NEXT_PUBLIC_POSTHOG_KEY;
+import { POSTHOG_ENABLED } from "@/lib/constants";
 
 type PHProviderProps = { children: React.ReactNode };
 
 export function PHProvider({ children }: PHProviderProps) {
   useEffect(() => {
-    if (isPostHogEnabled) {
+    if (POSTHOG_ENABLED) {
       posthog.init(process.env.NEXT_PUBLIC_POSTHOG_KEY!, {
         api_host: "/ph_ingest",
         ui_host:
@@ -24,7 +23,7 @@ export function PHProvider({ children }: PHProviderProps) {
     }
   }, []);
 
-  if (!isPostHogEnabled) {
+  if (!POSTHOG_ENABLED) {
     return <>{children}</>;
   }
 

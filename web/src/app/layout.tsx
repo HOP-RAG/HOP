@@ -8,6 +8,7 @@ import {
   CUSTOM_ANALYTICS_ENABLED,
   DEFAULT_APPLICATION_NAME,
   GTM_ENABLED,
+  POSTHOG_ENABLED,
   SERVER_SIDE_ONLY__PAID_ENTERPRISE_FEATURES_ENABLED,
   NEXT_PUBLIC_CLOUD_ENABLED,
   MODAL_ROOT_ID,
@@ -238,13 +239,15 @@ export default async function RootLayout({
       settings={combinedSettings}
       folded={folded}
     >
-      <Suspense fallback={null}>
-        <PostHogPageView />
-      </Suspense>
+      {POSTHOG_ENABLED && (
+        <Suspense fallback={null}>
+          <PostHogPageView />
+        </Suspense>
+      )}
       <div id={MODAL_ROOT_ID} className="h-screen w-screen">
         {content}
       </div>
-      {process.env.NEXT_PUBLIC_POSTHOG_KEY && <WebVitals />}
+      {POSTHOG_ENABLED && <WebVitals />}
       {process.env.NEXT_PUBLIC_ENABLE_STATS === "true" && (
         <StatsOverlayLoader />
       )}
