@@ -26,6 +26,8 @@ import { Section } from "@/layouts/general-layouts";
 import { toast } from "@/hooks/useToast";
 import useAppFocus from "@/hooks/useAppFocus";
 import { useVectorDbEnabled } from "@/providers/SettingsProvider";
+import AppLanguageSelect from "@/components/i18n/AppLanguageSelect";
+import { useAppLanguage } from "@/providers/AppLanguageProvider";
 
 interface SettingsPopoverProps {
   onUserSettingsClick: () => void;
@@ -37,6 +39,7 @@ function SettingsPopover({
   onOpenNotifications,
 }: SettingsPopoverProps) {
   const { user } = useUser();
+  const { t } = useAppLanguage();
   const { data: notifications } = useSWR<Notification[]>(
     "/api/notifications",
     errorHandlingFetcher,
@@ -86,7 +89,13 @@ function SettingsPopover({
 
   return (
     <>
-      <PopoverMenu>
+      <PopoverMenu
+        footer={
+          <div className="px-1 py-1">
+            <AppLanguageSelect />
+          </div>
+        }
+      >
         {[
           <div key="user-settings" data-testid="Settings/user-settings">
             <LineItem
@@ -94,7 +103,7 @@ function SettingsPopover({
               href="/app/settings"
               onClick={onUserSettingsClick}
             >
-              User Settings
+              {t("app.userSettings.title")}
             </LineItem>
           </div>,
           <LineItem
@@ -102,9 +111,11 @@ function SettingsPopover({
             icon={SvgBell}
             onClick={onOpenNotifications}
           >
-            {`Notifications${
-              undismissedCount > 0 ? ` (${undismissedCount})` : ""
-            }`}
+            {undismissedCount > 0
+              ? t("app.userSettings.notificationsWithCount", {
+                  count: undismissedCount,
+                })
+              : t("app.userSettings.notifications")}
           </LineItem>,
           <LineItem
             key="help-faq"
@@ -113,12 +124,12 @@ function SettingsPopover({
             target="_blank"
             rel="noopener noreferrer"
           >
-            Help & FAQ
+            {t("app.userSettings.help")}
           </LineItem>,
           null,
           showLogin && (
             <LineItem key="log-in" icon={SvgUser} onClick={handleLogin}>
-              Log in
+              {t("app.userSettings.login")}
             </LineItem>
           ),
           showLogout && (
@@ -128,7 +139,7 @@ function SettingsPopover({
               danger
               onClick={handleLogout}
             >
-              Log out
+              {t("app.userSettings.logout")}
             </LineItem>
           ),
         ]}

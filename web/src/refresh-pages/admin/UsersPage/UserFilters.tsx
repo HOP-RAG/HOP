@@ -15,14 +15,10 @@ import InputTypeIn from "@/refresh-components/inputs/InputTypeIn";
 import LineItem from "@/refresh-components/buttons/LineItem";
 import Text from "@/refresh-components/texts/Text";
 import ShadowDiv from "@/refresh-components/ShadowDiv";
-import {
-  UserRole,
-  UserStatus,
-  USER_ROLE_LABELS,
-  USER_STATUS_LABELS,
-} from "@/lib/types";
+import { UserRole, UserStatus, USER_ROLE_LABELS } from "@/lib/types";
 import { NEXT_PUBLIC_CLOUD_ENABLED } from "@/lib/constants";
 import type { GroupOption, StatusFilter, StatusCountMap } from "./interfaces";
+import { useAppLanguage } from "@/providers/AppLanguageProvider";
 
 // ---------------------------------------------------------------------------
 // Constants
@@ -34,16 +30,6 @@ const VISIBLE_FILTER_ROLES: UserRole[] = [
   UserRole.BASIC,
   UserRole.SLACK_USER,
 ];
-
-const FILTERABLE_ROLES = VISIBLE_FILTER_ROLES.map(
-  (role) => [role, USER_ROLE_LABELS[role]] as [UserRole, string]
-);
-
-const FILTERABLE_STATUSES = (
-  Object.entries(USER_STATUS_LABELS) as [UserStatus, string][]
-).filter(
-  ([value]) => value !== UserStatus.REQUESTED || NEXT_PUBLIC_CLOUD_ENABLED
-);
 
 const ROLE_ICONS: Partial<Record<UserRole, IconFunctionComponent>> = {
   [UserRole.ADMIN]: SvgUserManage,
@@ -68,6 +54,25 @@ function CountBadge({ count }: { count: number | undefined }) {
       {count ?? 0}
     </Text>
   );
+}
+
+function getLocalizedUserRoleLabel(
+  role: UserRole
+):
+  | "companies.role.admin"
+  | "companies.role.globalCurator"
+  | "companies.role.basic"
+  | null {
+  switch (role) {
+    case UserRole.ADMIN:
+      return "companies.role.admin";
+    case UserRole.GLOBAL_CURATOR:
+      return "companies.role.globalCurator";
+    case UserRole.BASIC:
+      return "companies.role.basic";
+    default:
+      return null;
+  }
 }
 
 // ---------------------------------------------------------------------------
@@ -97,11 +102,32 @@ export default function UserFilters({
   roleCounts,
   statusCounts,
 }: UserFiltersProps) {
+  const { t } = useAppLanguage();
   const hasRoleFilter = selectedRoles.length > 0;
   const hasGroupFilter = selectedGroups.length > 0;
   const hasStatusFilter = selectedStatuses.length > 0;
   const [groupSearch, setGroupSearch] = useState("");
   const [groupPopoverOpen, setGroupPopoverOpen] = useState(false);
+
+  const filterableRoles = VISIBLE_FILTER_ROLES.map((role) => [
+    role,
+    (() => {
+      const localizedRoleKey = getLocalizedUserRoleLabel(role);
+      return localizedRoleKey ? t(localizedRoleKey) : USER_ROLE_LABELS[role];
+    })(),
+  ]) as [UserRole, string][];
+
+  const filterableStatuses = [
+    [UserStatus.ACTIVE, t("common.status.active")] as [UserStatus, string],
+    [UserStatus.INACTIVE, t("common.status.inactive")] as [UserStatus, string],
+    [UserStatus.INVITED, t("common.status.invited")] as [UserStatus, string],
+    [UserStatus.REQUESTED, t("common.status.requested")] as [
+      UserStatus,
+      string,
+    ],
+  ].filter(
+    ([value]) => value !== UserStatus.REQUESTED || NEXT_PUBLIC_CLOUD_ENABLED
+  );
 
   const toggleRole = (role: UserRole) => {
     if (selectedRoles.includes(role)) {
@@ -128,12 +154,13 @@ export default function UserFilters({
   };
 
   const roleLabel = hasRoleFilter
-    ? FILTERABLE_ROLES.filter(([role]) => selectedRoles.includes(role))
+    ? filterableRoles
+        .filter(([role]) => selectedRoles.includes(role))
         .map(([, label]) => label)
         .slice(0, 2)
         .join(", ") +
       (selectedRoles.length > 2 ? `, +${selectedRoles.length - 2}` : "")
-    : "All Account Types";
+    : t("users.filters.allAccountTypes");
 
   const groupLabel = hasGroupFilter
     ? groups
@@ -142,17 +169,16 @@ export default function UserFilters({
         .slice(0, 2)
         .join(", ") +
       (selectedGroups.length > 2 ? `, +${selectedGroups.length - 2}` : "")
-    : "All Groups";
+    : t("users.filters.allGroups");
 
   const statusLabel = hasStatusFilter
-    ? FILTERABLE_STATUSES.filter(([status]) =>
-        selectedStatuses.includes(status)
-      )
+    ? filterableStatuses
+        .filter(([status]) => selectedStatuses.includes(status))
         .map(([, label]) => label)
         .slice(0, 2)
         .join(", ") +
       (selectedStatuses.length > 2 ? `, +${selectedStatuses.length - 2}` : "")
-    : "All Status";
+    : t("users.filters.allStatus");
 
   const filteredGroups = groupSearch
     ? groups.filter((g) =>
@@ -166,7 +192,7 @@ export default function UserFilters({
       <Popover>
         <Popover.Trigger asChild>
           <FilterButton
-            aria-label="Filter by role"
+            aria-label={t("users.filters.byRole")}
             leftIcon={SvgUsers}
             active={hasRoleFilter}
             onClear={() => onRolesChange([])}
@@ -182,9 +208,9 @@ export default function UserFilters({
               emphasized={!hasRoleFilter}
               onClick={() => onRolesChange([])}
             >
-              All Account Types
+              {t("users.filters.allAccountTypes")}
             </LineItem>
-            {FILTERABLE_ROLES.map(([role, label]) => {
+            {filterableRoles.map(([role, label]) => {
               const isSelected = selectedRoles.includes(role);
               const roleIcon = ROLE_ICONS[role] ?? SvgUser;
               return (
@@ -214,7 +240,7 @@ export default function UserFilters({
       >
         <Popover.Trigger asChild>
           <FilterButton
-            aria-label="Filter by group"
+            aria-label={t("users.filters.byGroup")}
             leftIcon={SvgUsers}
             active={hasGroupFilter}
             onClear={() => onGroupsChange([])}
@@ -227,7 +253,7 @@ export default function UserFilters({
             <InputTypeIn
               value={groupSearch}
               onChange={(e) => setGroupSearch(e.target.value)}
-              placeholder="Search groups..."
+              placeholder={t("users.filters.searchGroups")}
               leftSearchIcon
               variant="internal"
             />
@@ -237,7 +263,7 @@ export default function UserFilters({
               emphasized={!hasGroupFilter}
               onClick={() => onGroupsChange([])}
             >
-              All Groups
+              {t("users.filters.allGroups")}
             </LineItem>
             <ShadowDiv className="flex flex-col gap-1 max-h-[240px]">
               {filteredGroups.map((group) => {
@@ -257,7 +283,7 @@ export default function UserFilters({
               })}
               {filteredGroups.length === 0 && (
                 <Text as="span" secondaryBody text03 className="px-2 py-1.5">
-                  No groups found
+                  {t("users.filters.noGroups")}
                 </Text>
               )}
             </ShadowDiv>
@@ -269,7 +295,7 @@ export default function UserFilters({
       <Popover>
         <Popover.Trigger asChild>
           <FilterButton
-            aria-label="Filter by status"
+            aria-label={t("users.filters.byStatus")}
             leftIcon={SvgUsers}
             active={hasStatusFilter}
             onClear={() => onStatusesChange([])}
@@ -285,9 +311,9 @@ export default function UserFilters({
               emphasized={!hasStatusFilter}
               onClick={() => onStatusesChange([])}
             >
-              All Status
+              {t("users.filters.allStatus")}
             </LineItem>
-            {FILTERABLE_STATUSES.map(([status, label]) => {
+            {filterableStatuses.map(([status, label]) => {
               const isSelected = selectedStatuses.includes(status);
               const countKey = STATUS_COUNT_KEY[status];
               return (

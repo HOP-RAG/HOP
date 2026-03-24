@@ -6,10 +6,12 @@ import landingStyles from "@/app/Landing.module.css";
 import AccessRestrictedPage from "@/components/errorPages/AccessRestrictedPage";
 import { toast } from "@/hooks/useToast";
 import * as SettingsLayouts from "@/layouts/settings-layouts";
-import { ADMIN_ROUTES } from "@/lib/admin-routes";
+import { ADMIN_ROUTES, getAdminRouteCopy } from "@/lib/admin-routes";
+import { TranslateFn } from "@/lib/i18n/app-language";
 import { humanReadableFormatShort, timeAgo } from "@/lib/time";
 import { UserRole } from "@/lib/types";
 import { cn } from "@/lib/utils";
+import { useAppLanguage } from "@/providers/AppLanguageProvider";
 import { useUser } from "@/providers/UserProvider";
 import Tag from "@/refresh-components/buttons/Tag";
 import Card from "@/refresh-components/cards/Card";
@@ -64,41 +66,45 @@ function normalizeOptionalString(value: string) {
   return trimmed ? trimmed : null;
 }
 
-function roleLabel(role: UserRole | null) {
+function roleLabel(role: UserRole | null, t: TranslateFn) {
   if (!role) {
-    return "Pending";
+    return t("companies.role.pending");
   }
 
   switch (role) {
     case UserRole.ADMIN:
-      return "Admin";
+      return t("companies.role.admin");
     case UserRole.CURATOR:
-      return "Curator";
+      return t("companies.role.curator");
     case UserRole.GLOBAL_CURATOR:
-      return "Global Curator";
+      return t("companies.role.globalCurator");
     case UserRole.BASIC:
-      return "Basic";
+      return t("companies.role.basic");
     case UserRole.LIMITED:
-      return "Limited";
+      return t("companies.role.limited");
     default:
       return role.replaceAll("_", " ");
   }
 }
 
-function userStatusLabel(user: CompanyUserSnapshot) {
+function userStatusLabel(user: CompanyUserSnapshot, t: TranslateFn) {
   if (!user.mapping_active) {
-    return "Removed";
+    return t("common.status.removed");
   }
   if (!user.registered) {
-    return "Invited";
+    return t("common.status.invited");
   }
-  return user.is_active ? "Active" : "Disabled";
+  return user.is_active
+    ? t("common.status.active")
+    : t("common.status.disabled");
 }
 
 function CompanyStatusTag({ isActive }: { isActive: boolean }) {
+  const { t } = useAppLanguage();
+
   return (
     <Tag
-      label={isActive ? "Active" : "Inactive"}
+      label={isActive ? t("common.status.active") : t("common.status.inactive")}
       className={cn(
         "border",
         isActive
@@ -168,7 +174,7 @@ function MetricCard({
   );
 }
 
-function buildColumns(onSelect: (companyId: string) => void) {
+function buildColumns(onSelect: (companyId: string) => void, t: TranslateFn) {
   return [
     tc.qualifier({
       content: "avatar-user",
@@ -176,7 +182,7 @@ function buildColumns(onSelect: (companyId: string) => void) {
       selectable: false,
     }),
     tc.column("name", {
-      header: "Company",
+      header: t("companies.columns.company"),
       weight: 32,
       minWidth: 210,
       cell: (_value, row) => (
@@ -189,7 +195,7 @@ function buildColumns(onSelect: (companyId: string) => void) {
       ),
     }),
     tc.column("user_count", {
-      header: "Users",
+      header: t("companies.columns.users"),
       weight: 10,
       minWidth: 90,
       cell: (value) => (
@@ -199,13 +205,13 @@ function buildColumns(onSelect: (companyId: string) => void) {
       ),
     }),
     tc.column("is_active", {
-      header: "Status",
+      header: t("companies.columns.status"),
       weight: 12,
       minWidth: 110,
       cell: (value) => <CompanyStatusTag isActive={value} />,
     }),
     tc.column("created_at", {
-      header: "Created",
+      header: t("companies.columns.created"),
       weight: 18,
       minWidth: 160,
       cell: (value, row) => (
@@ -214,15 +220,21 @@ function buildColumns(onSelect: (companyId: string) => void) {
             {humanReadableFormatShort(value)}
           </Text>
           <Text as="span" secondaryBody text03>
-            by {row.created_by}
+            {t("companies.columns.createdBy", {
+              createdBy: row.created_by,
+            })}
           </Text>
         </div>
       ),
     }),
     tc.actions({
       cell: (row) => (
-        <Button size="sm" prominence="tertiary" onClick={() => onSelect(row.id)}>
-          View
+        <Button
+          size="sm"
+          prominence="tertiary"
+          onClick={() => onSelect(row.id)}
+        >
+          {t("companies.buttons.view")}
         </Button>
       ),
     }),
@@ -236,6 +248,7 @@ function CreateCompanyCard({
   onCreate: (payload: CompanyCreatePayload) => Promise<void>;
   isSubmitting: boolean;
 }) {
+  const { t } = useAppLanguage();
   const [name, setName] = useState("");
   const [domain, setDomain] = useState("");
   const [adminEmail, setAdminEmail] = useState("");
@@ -268,51 +281,49 @@ function CreateCompanyCard({
               as="span"
               className="text-[11px] font-semibold uppercase tracking-[0.2em] text-[var(--landing-accent-strong)]"
             >
-              New company
+              {t("companies.create.badge")}
             </Text>
           </div>
           <Text
             as="p"
             className="text-[1.4rem] font-semibold tracking-[-0.04em] text-[var(--landing-text)]"
           >
-            Provision a tenant and seed its first admin in one step.
+            {t("companies.create.title")}
           </Text>
           <Text
             as="p"
             className="text-sm leading-7 text-[var(--landing-muted)]"
           >
-            This uses the Phase 3 company APIs, so schema creation, migrations,
-            tenant setup, and the first invitation all happen from the same
-            workflow.
+            {t("companies.create.description")}
           </Text>
         </div>
 
         <form className="flex flex-col gap-4 pt-6" onSubmit={handleSubmit}>
-          <FormField label="Company name">
+          <FormField label={t("companies.fields.companyName")}>
             <InputTypeIn
               value={name}
               onChange={(event) => setName(event.target.value)}
-              placeholder="Acme Holdings"
+              placeholder={t("companies.placeholders.companyName")}
             />
           </FormField>
 
           <div className="grid gap-4 md:grid-cols-2">
             <FormField
-              label="Domain"
-              hint="Optional now, ready for future domain-based auto-join."
+              label={t("companies.fields.domain")}
+              hint={t("companies.fields.domainHint")}
             >
               <InputTypeIn
                 value={domain}
                 onChange={(event) => setDomain(event.target.value)}
-                placeholder="acme.com"
+                placeholder={t("companies.placeholders.domain")}
               />
             </FormField>
 
-            <FormField label="Initial admin email">
+            <FormField label={t("companies.fields.initialAdminEmail")}>
               <InputTypeIn
                 value={adminEmail}
                 onChange={(event) => setAdminEmail(event.target.value)}
-                placeholder="bob@acme.com"
+                placeholder={t("companies.placeholders.adminEmail")}
                 type="email"
               />
             </FormField>
@@ -321,7 +332,9 @@ function CreateCompanyCard({
           <div className="flex justify-end">
             <Disabled disabled={!canSubmit || isSubmitting}>
               <Button type="submit" icon={SvgPlusCircle}>
-                {isSubmitting ? "Creating..." : "Create company"}
+                {isSubmitting
+                  ? t("companies.buttons.creating")
+                  : t("companies.buttons.create")}
               </Button>
             </Disabled>
           </div>
@@ -332,12 +345,13 @@ function CreateCompanyCard({
 }
 
 function CompanyUsersList({ users }: { users: CompanyUserSnapshot[] }) {
+  const { t } = useAppLanguage();
+
   if (!users.length) {
     return (
       <div className="rounded-16 border border-dashed border-border-02 bg-background-neutral-01 p-5">
         <Text as="p" secondaryBody text03>
-          No invited users yet. Invite a customer admin to start the company
-          onboarding flow.
+          {t("companies.users.empty")}
         </Text>
       </div>
     );
@@ -356,13 +370,13 @@ function CompanyUsersList({ users }: { users: CompanyUserSnapshot[] }) {
             </Text>
             <Text as="p" secondaryBody text03>
               {user.registered
-                ? "Registered in tenant"
-                : "Invitation pending registration"}
+                ? t("companies.users.registered")
+                : t("companies.users.pendingRegistration")}
             </Text>
           </div>
           <div className="flex flex-wrap gap-2">
-            <Tag label={roleLabel(user.role)} />
-            <Tag label={userStatusLabel(user)} />
+            <Tag label={roleLabel(user.role, t)} />
+            <Tag label={userStatusLabel(user, t)} />
           </div>
         </div>
       ))}
@@ -387,6 +401,7 @@ function CompanyDetailPanel({
   onToggleActive: (nextActive: boolean) => Promise<void>;
   isMutating: boolean;
 }) {
+  const { t } = useAppLanguage();
   const [name, setName] = useState("");
   const [domain, setDomain] = useState("");
   const [inviteEmail, setInviteEmail] = useState("");
@@ -409,10 +424,10 @@ function CompanyDetailPanel({
     return (
       <div className="rounded-20 border border-status-error-01 bg-status-error-01 p-6">
         <Text as="p" mainUiAction className="text-status-error-05">
-          Failed to load company details.
+          {t("companies.detail.errorTitle")}
         </Text>
         <Text as="p" secondaryBody text03 className="pt-2">
-          Try selecting the company again or refresh the page.
+          {t("companies.detail.errorDescription")}
         </Text>
       </div>
     );
@@ -422,11 +437,10 @@ function CompanyDetailPanel({
     return (
       <div className="rounded-20 border border-dashed border-border-02 bg-background-neutral-01 p-8">
         <Text as="p" headingH3>
-          No company selected
+          {t("companies.detail.noneTitle")}
         </Text>
         <Text as="p" secondaryBody text03 className="pt-3">
-          Choose a company from the table to inspect users, update metadata, or
-          invite another customer admin.
+          {t("companies.detail.noneDescription")}
         </Text>
       </div>
     );
@@ -467,8 +481,12 @@ function CompanyDetailPanel({
 
     const approved = window.confirm(
       nextActive
-        ? `Activate ${currentCompany.name}? Users mapped to this company will be able to log in again.`
-        : `Deactivate ${currentCompany.name}? Existing mappings stay in place, but login and registration will be blocked.`
+        ? t("companies.confirm.activate", {
+            name: currentCompany.name,
+          })
+        : t("companies.confirm.deactivate", {
+            name: currentCompany.name,
+          })
     );
 
     if (!approved) {
@@ -489,17 +507,21 @@ function CompanyDetailPanel({
             <CompanyStatusTag isActive={currentCompany.is_active} />
           </div>
           <Text as="p" secondaryBody text03>
-            Tenant schema: {currentCompany.tenant_id}
+            {t("companies.detail.tenantSchema", {
+              tenantId: currentCompany.tenant_id,
+            })}
           </Text>
           <Text as="p" secondaryBody text03>
-            Created {humanReadableFormatShort(currentCompany.created_at)} by{" "}
-            {currentCompany.created_by}
+            {t("companies.detail.createdBy", {
+              date: humanReadableFormatShort(currentCompany.created_at),
+              createdBy: currentCompany.created_by,
+            })}
           </Text>
         </div>
 
         <div className="flex items-center gap-3 rounded-full border border-border-01 bg-background-neutral-01 px-4 py-2">
           <Text as="span" mainUiBody text03>
-            Company access
+            {t("companies.detail.companyAccess")}
           </Text>
           <Switch
             checked={currentCompany.is_active}
@@ -512,7 +534,7 @@ function CompanyDetailPanel({
       <div className="grid gap-4 md:grid-cols-3">
         <div className="rounded-16 border border-border-01 bg-background-neutral-01 p-4">
           <Text as="p" secondaryBody text03>
-            Managed users
+            {t("companies.detail.managedUsers")}
           </Text>
           <Text as="p" headingH3 className="pt-2">
             {metricValue(currentCompany.user_count)}
@@ -520,18 +542,18 @@ function CompanyDetailPanel({
         </div>
         <div className="rounded-16 border border-border-01 bg-background-neutral-01 p-4">
           <Text as="p" secondaryBody text03>
-            Last updated
+            {t("companies.detail.lastUpdated")}
           </Text>
           <Text as="p" headingH3 className="pt-2">
-            {timeAgo(currentCompany.updated_at) ?? "Just now"}
+            {timeAgo(currentCompany.updated_at) ?? t("common.justNow")}
           </Text>
         </div>
         <div className="rounded-16 border border-border-01 bg-background-neutral-01 p-4">
           <Text as="p" secondaryBody text03>
-            Join domain
+            {t("companies.detail.joinDomain")}
           </Text>
           <Text as="p" headingH3 className="pt-2">
-            {currentCompany.domain ?? "Not set"}
+            {currentCompany.domain ?? t("companies.detail.notSet")}
           </Text>
         </div>
       </div>
@@ -543,33 +565,35 @@ function CompanyDetailPanel({
           <div className="flex items-center gap-2">
             <SvgEdit className="h-4 w-4 stroke-text-03" />
             <Text as="p" mainUiAction text04>
-              Company metadata
+              {t("companies.detail.metadata")}
             </Text>
           </div>
 
-          <FormField label="Display name">
+          <FormField label={t("companies.fields.displayName")}>
             <InputTypeIn
               value={name}
               onChange={(event) => setName(event.target.value)}
-              placeholder="Company display name"
+              placeholder={t("companies.placeholders.displayName")}
             />
           </FormField>
 
           <FormField
-            label="Domain"
-            hint="Optional. Keep it blank if you are not using domain-based matching yet."
+            label={t("companies.fields.domain")}
+            hint={t("companies.fields.domainEditHint")}
           >
             <InputTypeIn
               value={domain}
               onChange={(event) => setDomain(event.target.value)}
-              placeholder="company.com"
+              placeholder={t("companies.placeholders.domain")}
             />
           </FormField>
 
           <div className="flex justify-end">
             <Disabled disabled={!hasChanges || isMutating}>
               <Button type="submit">
-                {isMutating ? "Saving..." : "Save changes"}
+                {isMutating
+                  ? t("companies.buttons.saving")
+                  : t("companies.buttons.save")}
               </Button>
             </Disabled>
           </div>
@@ -579,19 +603,19 @@ function CompanyDetailPanel({
           <div className="flex items-center gap-2">
             <SvgUserPlus className="h-4 w-4 stroke-text-03" />
             <Text as="p" mainUiAction text04>
-              Invite customer admin
+              {t("companies.detail.inviteCustomerAdmin")}
             </Text>
           </div>
 
           <FormField
-            label="Admin email"
-            hint="If the user already exists in this tenant, they will be promoted to Admin automatically."
+            label={t("companies.fields.adminEmail")}
+            hint={t("companies.fields.adminEmailHint")}
           >
             <InputTypeIn
               type="email"
               value={inviteEmail}
               onChange={(event) => setInviteEmail(event.target.value)}
-              placeholder="alice@company.com"
+              placeholder={t("companies.placeholders.inviteEmail")}
             />
           </FormField>
 
@@ -602,14 +626,16 @@ function CompanyDetailPanel({
               }
             >
               <Button type="submit" icon={SvgUserPlus}>
-                {isMutating ? "Sending..." : "Invite admin"}
+                {isMutating
+                  ? t("companies.buttons.sending")
+                  : t("companies.buttons.inviteAdmin")}
               </Button>
             </Disabled>
           </div>
 
           {!currentCompany.is_active ? (
             <Text as="p" secondaryBody className="text-status-warning-05">
-              Reactivate this company before sending new admin invitations.
+              {t("companies.detail.inactiveInviteWarning")}
             </Text>
           ) : null}
         </form>
@@ -621,7 +647,7 @@ function CompanyDetailPanel({
         <div className="flex items-center gap-2">
           <SvgUsers className="h-4 w-4 stroke-text-03" />
           <Text as="p" mainUiAction text04>
-            Users in company
+            {t("companies.detail.usersInCompany")}
           </Text>
         </div>
         <CompanyUsersList users={currentCompany.users} />
@@ -631,6 +657,7 @@ function CompanyDetailPanel({
 }
 
 export default function CompaniesPage() {
+  const { t } = useAppLanguage();
   const { isCloudSuperuser } = useUser();
   const [selectedCompanyId, setSelectedCompanyId] = useState<string | null>(
     null
@@ -658,9 +685,8 @@ export default function CompaniesPage() {
     data: selectedCompany,
     isLoading: isSelectedCompanyLoading,
     error: selectedCompanyError,
-  } = useSWR<CompanyDetail>(
-    isCloudSuperuser ? selectedCompanyKey : null,
-    () => fetchCompany(selectedCompanyId as string)
+  } = useSWR<CompanyDetail>(isCloudSuperuser ? selectedCompanyKey : null, () =>
+    fetchCompany(selectedCompanyId as string)
   );
 
   useEffect(() => {
@@ -684,9 +710,10 @@ export default function CompaniesPage() {
     }
   }, [companies, selectedCompanyId]);
 
+  const routeCopy = getAdminRouteCopy(route, t);
   const columns = useMemo(
-    () => buildColumns((companyId) => setSelectedCompanyId(companyId)),
-    []
+    () => buildColumns((companyId) => setSelectedCompanyId(companyId), t),
+    [t]
   );
 
   const companyMetrics = useMemo(() => {
@@ -726,10 +753,12 @@ export default function CompaniesPage() {
         revalidate: false,
       });
       await mutateCompanies();
-      toast.success(`${company.name} is ready for onboarding`);
+      toast.success(t("companies.toast.ready", { name: company.name }));
     } catch (error) {
       toast.error(
-        error instanceof Error ? error.message : "Failed to create company"
+        error instanceof Error
+          ? error.message
+          : t("companies.toast.createFailed")
       );
     } finally {
       setIsCreateSubmitting(false);
@@ -745,10 +774,12 @@ export default function CompaniesPage() {
     try {
       await updateCompany(selectedCompanyId, payload);
       await refreshCompaniesAndDetail(selectedCompanyId);
-      toast.success("Company details updated");
+      toast.success(t("companies.toast.updated"));
     } catch (error) {
       toast.error(
-        error instanceof Error ? error.message : "Failed to update company"
+        error instanceof Error
+          ? error.message
+          : t("companies.toast.updateFailed")
       );
     } finally {
       setIsDetailSubmitting(false);
@@ -769,10 +800,12 @@ export default function CompaniesPage() {
         { revalidate: false }
       );
       await mutateCompanies();
-      toast.success("Admin invitation sent");
+      toast.success(t("companies.toast.invitationSent"));
     } catch (error) {
       toast.error(
-        error instanceof Error ? error.message : "Failed to invite admin"
+        error instanceof Error
+          ? error.message
+          : t("companies.toast.invitationFailed")
       );
     } finally {
       setIsDetailSubmitting(false);
@@ -794,13 +827,15 @@ export default function CompaniesPage() {
 
       await refreshCompaniesAndDetail(selectedCompanyId);
       toast.success(
-        nextActive ? "Company reactivated" : "Company deactivated"
+        nextActive
+          ? t("companies.toast.reactivated")
+          : t("companies.toast.deactivated")
       );
     } catch (error) {
       toast.error(
         error instanceof Error
           ? error.message
-          : "Failed to update company status"
+          : t("companies.toast.statusFailed")
       );
     } finally {
       setIsDetailSubmitting(false);
@@ -810,9 +845,9 @@ export default function CompaniesPage() {
   return (
     <SettingsLayouts.Root width="full">
       <SettingsLayouts.Header
-        title={route.title}
+        title={routeCopy.title}
         icon={route.icon}
-        description="Create, inspect, and control tenant companies from the platform admin console."
+        description={t("companies.page.description")}
         separator
       />
 
@@ -834,7 +869,7 @@ export default function CompaniesPage() {
                   as="span"
                   className="text-[11px] font-semibold uppercase tracking-[0.22em] text-[var(--landing-accent-strong)]"
                 >
-                  Platform admin workspace
+                  {t("companies.hero.badge")}
                 </Text>
               </div>
 
@@ -843,16 +878,13 @@ export default function CompaniesPage() {
                   as="p"
                   className="text-[clamp(2rem,4vw,3.25rem)] font-semibold leading-[0.95] tracking-[-0.07em] text-[var(--landing-text)]"
                 >
-                  Run tenant creation, activation, and admin invitations from a
-                  single control surface.
+                  {t("companies.hero.title")}
                 </Text>
                 <Text
                   as="p"
                   className="max-w-2xl pt-5 text-[1rem] leading-8 text-[var(--landing-muted)]"
                 >
-                  The page is tuned for self-hosted multi-tenant operations: it
-                  speaks directly to the company APIs from Phase 3 and keeps the
-                  platform-only navigation hidden from customer admins.
+                  {t("companies.hero.description")}
                 </Text>
               </div>
 
@@ -860,32 +892,38 @@ export default function CompaniesPage() {
                 <div className="rounded-16 border border-[color:var(--landing-border)] bg-[color:var(--landing-card)] p-4">
                   <div className="flex items-center gap-2">
                     <SvgGlobe className="h-4 w-4 stroke-[var(--landing-accent-strong)]" />
-                    <Text as="p" mainUiAction className="text-[var(--landing-text)]">
-                      Domain-aware by design
+                    <Text
+                      as="p"
+                      mainUiAction
+                      className="text-[var(--landing-text)]"
+                    >
+                      {t("companies.hero.domainAwareTitle")}
                     </Text>
                   </div>
                   <Text
                     as="p"
                     className="pt-3 text-sm leading-7 text-[var(--landing-muted)]"
                   >
-                    Keep domains optional today, but ready for the auto-join
-                    model when you decide to enable it.
+                    {t("companies.hero.domainAwareDescription")}
                   </Text>
                 </div>
 
                 <div className="rounded-16 border border-[color:var(--landing-border)] bg-[color:var(--landing-card)] p-4">
                   <div className="flex items-center gap-2">
                     <SvgUser className="h-4 w-4 stroke-[var(--landing-accent-strong)]" />
-                    <Text as="p" mainUiAction className="text-[var(--landing-text)]">
-                      Invite-first onboarding
+                    <Text
+                      as="p"
+                      mainUiAction
+                      className="text-[var(--landing-text)]"
+                    >
+                      {t("companies.hero.inviteFirstTitle")}
                     </Text>
                   </div>
                   <Text
                     as="p"
                     className="pt-3 text-sm leading-7 text-[var(--landing-muted)]"
                   >
-                    Every company starts invite-only, which matches the secure
-                    registration flow already wired in the backend.
+                    {t("companies.hero.inviteFirstDescription")}
                   </Text>
                 </div>
               </div>
@@ -893,24 +931,24 @@ export default function CompaniesPage() {
 
             <div className="grid gap-4 sm:grid-cols-2">
               <MetricCard
-                label="Companies"
+                label={t("companies.metrics.totalCompanies")}
                 value={metricValue(companyMetrics.totalCompanies)}
-                detail="Total tenant companies under platform management."
+                detail={t("companies.metrics.totalCompaniesDetail")}
               />
               <MetricCard
-                label="Active"
+                label={t("companies.metrics.activeCompanies")}
                 value={metricValue(companyMetrics.activeCompanies)}
-                detail="Companies currently allowed to onboard and log in."
+                detail={t("companies.metrics.activeCompaniesDetail")}
               />
               <MetricCard
-                label="Inactive"
+                label={t("companies.metrics.inactiveCompanies")}
                 value={metricValue(companyMetrics.inactiveCompanies)}
-                detail="Soft-disabled companies kept intact for recovery."
+                detail={t("companies.metrics.inactiveCompaniesDetail")}
               />
               <MetricCard
-                label="Users mapped"
+                label={t("companies.metrics.totalUsers")}
                 value={metricValue(companyMetrics.totalUsers)}
-                detail="Active user mappings across every company."
+                detail={t("companies.metrics.totalUsersDetail")}
               />
             </div>
           </div>
@@ -927,17 +965,16 @@ export default function CompaniesPage() {
               <div className="flex items-center gap-2">
                 <SvgUsers className="h-4 w-4 stroke-text-03" />
                 <Text as="p" headingH3>
-                  Company roster
+                  {t("companies.roster.title")}
                 </Text>
               </div>
               <Text as="p" secondaryBody text03>
-                Select a company to inspect users, adjust metadata, or change
-                activation state.
+                {t("companies.roster.description")}
               </Text>
               <InputTypeIn
                 value={searchTerm}
                 onChange={(event) => setSearchTerm(event.target.value)}
-                placeholder="Search companies..."
+                placeholder={t("companies.roster.search")}
                 leftSearchIcon
               />
             </div>
@@ -949,7 +986,7 @@ export default function CompaniesPage() {
             ) : companiesError ? (
               <div className="p-6">
                 <Text as="p" secondaryBody className="text-status-error-05">
-                  Failed to load companies. Refresh the page and try again.
+                  {t("companies.roster.error")}
                 </Text>
               </div>
             ) : (
@@ -968,8 +1005,8 @@ export default function CompaniesPage() {
                 emptyState={
                   <IllustrationContent
                     illustration={SvgNoResult}
-                    title="No companies yet"
-                    description="Create the first company to provision a tenant and start the invitation flow."
+                    title={t("companies.roster.emptyTitle")}
+                    description={t("companies.roster.emptyDescription")}
                   />
                 }
               />

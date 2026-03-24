@@ -7,6 +7,7 @@ import { ApplicationStatus } from "@/interfaces/settings";
 import { Button } from "@opal/components";
 import { cn } from "@/lib/utils";
 import { ADMIN_ROUTES } from "@/lib/admin-routes";
+import { useEffect } from "react";
 
 export interface ClientLayoutProps {
   children: React.ReactNode;
@@ -52,6 +53,14 @@ export function ClientLayout({ children, enableCloud }: ClientLayoutProps) {
   const pathname = usePathname();
   const settings = useSettingsContext();
 
+  useEffect(() => {
+    document.body.dataset.experience = "admin";
+
+    return () => {
+      delete document.body.dataset.experience;
+    };
+  }, []);
+
   // Certain admin panels have their own custom sidebar.
   // For those pages, we skip rendering the default `AdminSidebar` and let those individual pages render their own.
   const hasCustomSidebar =
@@ -64,7 +73,7 @@ export function ClientLayout({ children, enableCloud }: ClientLayoutProps) {
   );
 
   return (
-    <div className="h-screen w-screen flex overflow-hidden">
+    <div className="admin-experience h-screen w-screen flex overflow-hidden">
       {settings.settings.application_status ===
         ApplicationStatus.PAYMENT_REMINDER && (
         <div className="fixed top-2 left-1/2 transform -translate-x-1/2 bg-amber-400 dark:bg-amber-500 text-gray-900 dark:text-gray-100 p-4 rounded-lg shadow-lg z-50 max-w-md text-center">
@@ -86,7 +95,7 @@ export function ClientLayout({ children, enableCloud }: ClientLayoutProps) {
           <div
             data-main-container
             className={cn(
-              "flex flex-1 flex-col min-w-0 min-h-0 overflow-y-auto",
+              "admin-main-container flex flex-1 flex-col min-w-0 min-h-0 overflow-y-auto",
               !hasOwnLayout && "py-10 px-4 md:px-12"
             )}
           >
