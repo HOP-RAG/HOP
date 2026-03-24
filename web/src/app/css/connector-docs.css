@@ -1,0 +1,211 @@
+.connector-docs-shell {
+  min-height: 100%;
+  background:
+    radial-gradient(circle at top left, rgba(108, 132, 255, 0.12), transparent 28rem),
+    radial-gradient(circle at top right, rgba(18, 164, 124, 0.1), transparent 24rem),
+    linear-gradient(180deg, var(--background-neutral-00), var(--background-neutral-01));
+}
+
+.connector-docs-frame {
+  max-width: 88rem;
+  margin: 0 auto;
+  padding: 2.5rem 1.25rem 4rem;
+}
+
+.connector-docs-hero,
+.connector-docs-section,
+.connector-docs-source-card,
+.connector-docs-provider-card {
+  border: 1px solid var(--border-02);
+  box-shadow: 0 1.5rem 3rem rgba(9, 21, 46, 0.08);
+}
+
+.connector-docs-hero {
+  position: relative;
+  overflow: hidden;
+  background:
+    linear-gradient(155deg, rgba(255, 255, 255, 0.96), rgba(245, 248, 255, 0.96)),
+    var(--background-neutral-00);
+}
+
+.connector-docs-hero::after {
+  content: "";
+  position: absolute;
+  inset: auto -4rem -5rem auto;
+  width: 12rem;
+  height: 12rem;
+  border-radius: 999px;
+  background: radial-gradient(circle, rgba(51, 108, 250, 0.2), transparent 65%);
+  pointer-events: none;
+}
+
+.connector-docs-hero-title {
+  max-width: 48rem;
+}
+
+.connector-docs-hero-copy {
+  max-width: 48rem;
+}
+
+.connector-docs-grid {
+  display: grid;
+  gap: 1rem;
+}
+
+.connector-docs-grid--three {
+  grid-template-columns: repeat(3, minmax(0, 1fr));
+}
+
+.connector-docs-grid--two {
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+}
+
+.connector-docs-grid--cards {
+  grid-template-columns: repeat(auto-fit, minmax(17.5rem, 1fr));
+}
+
+.connector-docs-summary-card,
+.connector-docs-section-card {
+  height: 100%;
+}
+
+.connector-docs-language {
+  min-width: 11rem;
+}
+
+.connector-docs-source-card {
+  height: 100%;
+  transition:
+    transform 180ms ease,
+    border-color 180ms ease,
+    box-shadow 180ms ease;
+}
+
+.connector-docs-source-card:hover {
+  transform: translateY(-0.125rem);
+  border-color: var(--theme-primary-04);
+  box-shadow: 0 1.8rem 3rem rgba(16, 54, 131, 0.12);
+}
+
+.connector-docs-card-link {
+  text-decoration: none;
+}
+
+.connector-docs-source-icon {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  width: 3rem;
+  height: 3rem;
+  border-radius: 1rem;
+  background: rgba(51, 108, 250, 0.1);
+}
+
+.connector-docs-source-icon--large {
+  width: 3.25rem;
+  height: 3.25rem;
+}
+
+.connector-docs-chip {
+  display: inline-flex;
+  align-items: center;
+  border-radius: 999px;
+  padding: 0.45rem 0.8rem;
+  background: rgba(51, 108, 250, 0.08);
+}
+
+.connector-docs-source-footer {
+  display: flex;
+  align-items: center;
+  gap: 0.35rem;
+}
+
+.connector-docs-link-icon {
+  width: 1rem;
+  height: 1rem;
+  color: var(--text-04);
+}
+
+.connector-docs-nav {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 0.55rem;
+}
+
+.connector-docs-nav-pill {
+  display: inline-flex;
+  align-items: center;
+  border-radius: 999px;
+  padding: 0.45rem 0.85rem;
+  color: var(--text-04);
+  background: var(--background-neutral-02);
+  border: 1px solid var(--border-02);
+  text-decoration: none;
+  transition:
+    color 180ms ease,
+    border-color 180ms ease,
+    background-color 180ms ease;
+}
+
+.connector-docs-nav-pill:hover {
+  color: var(--text-05);
+  border-color: var(--theme-primary-04);
+  background: rgba(51, 108, 250, 0.08);
+}
+
+.connector-docs-step-card {
+  position: relative;
+}
+
+.connector-docs-step-number {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  flex-shrink: 0;
+  width: 2rem;
+  height: 2rem;
+  border-radius: 999px;
+  background: linear-gradient(135deg, var(--theme-primary-05), var(--theme-primary-04));
+  color: var(--text-inverted-05);
+  font-weight: 700;
+}
+
+.connector-docs-inline-bullet {
+  position: relative;
+  padding-left: 1rem;
+}
+
+.connector-docs-inline-bullet::before {
+  content: "";
+  position: absolute;
+  left: 0;
+  top: 0.55rem;
+  width: 0.35rem;
+  height: 0.35rem;
+  border-radius: 999px;
+  background: var(--theme-primary-05);
+}
+
+.connector-docs-provider-links {
+  max-width: 100%;
+}
+
+.connector-docs-back-link {
+  display: inline-flex;
+  align-items: center;
+  gap: 0.45rem;
+  text-decoration: none;
+}
+
+@media (max-width: 60rem) {
+  .connector-docs-grid--three,
+  .connector-docs-grid--two {
+    grid-template-columns: 1fr;
+  }
+}
+
+@media (max-width: 42rem) {
+  .connector-docs-frame {
+    padding: 1.25rem 0.85rem 2.5rem;
+  }
+}

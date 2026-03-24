@@ -6,7 +6,6 @@ import { useRouter } from "next/navigation";
 import type { Route } from "next";
 import { adminDeleteCredential } from "@/lib/credential";
 import { setupGoogleDriveOAuth } from "@/lib/googleDrive";
-import { DOCS_ADMINS_PATH } from "@/lib/constants";
 import { TextFormField, SectionHeader } from "@/components/Field";
 import { Form, Formik } from "formik";
 import { User } from "@/lib/types";
@@ -20,6 +19,7 @@ import {
 import { refreshAllGoogleData } from "@/lib/googleConnector";
 import { ValidSources } from "@/lib/types";
 import { buildSimilarCredentialInfoURL } from "@/app/admin/connector/[ccPairId]/lib";
+import { getSourceDocLink } from "@/lib/sources";
 import { FiFile, FiCheck, FiLink, FiAlertTriangle } from "react-icons/fi";
 import { cn, truncateString } from "@/lib/utils";
 
@@ -275,7 +275,7 @@ export const DriveJsonUploadSection = ({
         <a
           className="text-primary hover:text-primary/80 flex items-center gap-1 text-sm"
           target="_blank"
-          href={`${DOCS_ADMINS_PATH}/connectors/official/google_drive/overview`}
+          href={getSourceDocLink(ValidSources.GoogleDrive) || "#"}
           rel="noreferrer"
         >
           <FiLink className="h-3 w-3" />

@@ -8,7 +8,6 @@ import { useRouter } from "next/navigation";
 import type { Route } from "next";
 import { adminDeleteCredential } from "@/lib/credential";
 import { setupGmailOAuth } from "@/lib/gmail";
-import { DOCS_ADMINS_PATH } from "@/lib/constants";
 import { CRAFT_OAUTH_COOKIE_NAME } from "@/app/craft/v1/constants";
 import Cookies from "js-cookie";
 import { TextFormField, SectionHeader } from "@/components/Field";
@@ -22,6 +21,7 @@ import {
 import { refreshAllGoogleData } from "@/lib/googleConnector";
 import { ValidSources } from "@/lib/types";
 import { buildSimilarCredentialInfoURL } from "@/app/admin/connector/[ccPairId]/lib";
+import { getSourceDocLink } from "@/lib/sources";
 import { FiFile, FiCheck, FiLink, FiAlertTriangle } from "react-icons/fi";
 import { cn, truncateString } from "@/lib/utils";
 import { Section } from "@/layouts/general-layouts";
@@ -275,7 +275,7 @@ export const GmailJsonUploadSection = ({
         <a
           className="text-primary hover:text-primary/80 flex items-center gap-1 text-sm"
           target="_blank"
-          href={`${DOCS_ADMINS_PATH}/connectors/official/gmail/overview`}
+          href={getSourceDocLink(ValidSources.Gmail) || "#"}
           rel="noreferrer"
         >
           <FiLink className="h-3 w-3" />
