@@ -67,6 +67,7 @@ import { AuthTypeMetadata } from "@/lib/userSS";
 import { AppSidebarProvider } from "@/providers/AppSidebarProvider";
 import { AppBackgroundProvider } from "@/providers/AppBackgroundProvider";
 import { QueryControllerProvider } from "@/providers/QueryControllerProvider";
+import { AppLanguageProvider } from "@/providers/AppLanguageProvider";
 import ToastProvider from "@/providers/ToastProvider";
 
 interface AppProviderProps {
@@ -86,23 +87,25 @@ export default function AppProvider({
 }: AppProviderProps) {
   return (
     <SettingsProvider settings={settings}>
-      <UserProvider
-        settings={settings}
-        user={user}
-        authTypeMetadata={authTypeMetadata}
-      >
-        <AppBackgroundProvider>
-          <ProviderContextProvider>
-            <ModalProvider user={user}>
-              <AppSidebarProvider folded={!!folded}>
-                <QueryControllerProvider>
-                  <ToastProvider>{children}</ToastProvider>
-                </QueryControllerProvider>
-              </AppSidebarProvider>
-            </ModalProvider>
-          </ProviderContextProvider>
-        </AppBackgroundProvider>
-      </UserProvider>
+      <AppLanguageProvider>
+        <UserProvider
+          settings={settings}
+          user={user}
+          authTypeMetadata={authTypeMetadata}
+        >
+          <AppBackgroundProvider>
+            <ProviderContextProvider>
+              <ModalProvider user={user}>
+                <AppSidebarProvider folded={!!folded}>
+                  <QueryControllerProvider>
+                    <ToastProvider>{children}</ToastProvider>
+                  </QueryControllerProvider>
+                </AppSidebarProvider>
+              </ModalProvider>
+            </ProviderContextProvider>
+          </AppBackgroundProvider>
+        </UserProvider>
+      </AppLanguageProvider>
     </SettingsProvider>
   );
 }

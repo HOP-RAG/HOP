@@ -7,6 +7,7 @@ import IconButton from "@/refresh-components/buttons/IconButton";
 import Text from "@/refresh-components/texts/Text";
 import Link from "next/link";
 import { ADMIN_ROUTES } from "@/lib/admin-routes";
+import { useAppLanguage } from "@/providers/AppLanguageProvider";
 
 // ---------------------------------------------------------------------------
 // Stats cell — number + label + hover filter icon
@@ -57,19 +58,21 @@ function StatCell({ value, label, onFilter }: StatCellProps) {
 // ---------------------------------------------------------------------------
 
 function ScimCard() {
+  const { t } = useAppLanguage();
+
   return (
     <Card gap={0.5} padding={0.75}>
       <ContentAction
         icon={SvgUserSync}
-        title="SCIM Sync"
-        description="Users are synced from your identity provider."
+        title={t("users.summary.scimTitle")}
+        description={t("users.summary.scimDescription")}
         sizePreset="main-ui"
         variant="section"
         paddingVariant="fit"
         rightChildren={
           <Link href={ADMIN_ROUTES.SCIM.path}>
             <Button prominence="tertiary" rightIcon={SvgArrowUpRight} size="sm">
-              Manage
+              {t("users.summary.manage")}
             </Button>
           </Link>
         }
@@ -101,6 +104,7 @@ export default function UsersSummary({
   onFilterInvites,
   onFilterRequests,
 }: UsersSummaryProps) {
+  const { t } = useAppLanguage();
   const showRequests = requests !== null && requests > 0;
 
   const statsCard = (
@@ -108,18 +112,18 @@ export default function UsersSummary({
       <Section flexDirection="row" gap={0}>
         <StatCell
           value={activeUsers}
-          label="active users"
+          label={t("users.summary.activeUsers")}
           onFilter={onFilterActive}
         />
         <StatCell
           value={pendingInvites}
-          label="pending invites"
+          label={t("users.summary.pendingInvites")}
           onFilter={onFilterInvites}
         />
         {showRequests && (
           <StatCell
             value={requests}
-            label="requests to join"
+            label={t("users.summary.requestsToJoin")}
             onFilter={onFilterRequests}
           />
         )}
@@ -147,14 +151,14 @@ export default function UsersSummary({
       <Card padding={0.5}>
         <StatCell
           value={activeUsers}
-          label="active users"
+          label={t("users.summary.activeUsers")}
           onFilter={onFilterActive}
         />
       </Card>
       <Card padding={0.5}>
         <StatCell
           value={pendingInvites}
-          label="pending invites"
+          label={t("users.summary.pendingInvites")}
           onFilter={onFilterInvites}
         />
       </Card>
@@ -162,7 +166,7 @@ export default function UsersSummary({
         <Card padding={0.5}>
           <StatCell
             value={requests}
-            label="requests to join"
+            label={t("users.summary.requestsToJoin")}
             onFilter={onFilterRequests}
           />
         </Card>

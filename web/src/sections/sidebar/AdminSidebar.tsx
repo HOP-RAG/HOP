@@ -22,22 +22,29 @@ import {
   hasActiveSubscription,
 } from "@/lib/billing";
 import { Content } from "@opal/layouts";
-import { ADMIN_ROUTES, sidebarItem } from "@/lib/admin-routes";
+import {
+  ADMIN_ROUTES,
+  AdminRouteEntry,
+  getAdminRouteCopy,
+} from "@/lib/admin-routes";
 import useFilter from "@/hooks/useFilter";
 import { IconFunctionComponent } from "@opal/types";
 import { Section } from "@/layouts/general-layouts";
 import Text from "@/refresh-components/texts/Text";
 import { getUserDisplayName } from "@/lib/user";
 import { APP_SLOGAN, DEFAULT_APPLICATION_NAME } from "@/lib/constants";
+import AppLanguageSelect from "@/components/i18n/AppLanguageSelect";
+import { useAppLanguage } from "@/providers/AppLanguageProvider";
+import { TranslationKey } from "@/lib/i18n/app-language";
 
 const SECTIONS = {
   UNLABELED: "",
-  AGENTS_AND_ACTIONS: "Agents & Actions",
-  DOCUMENTS_AND_KNOWLEDGE: "Documents & Knowledge",
-  INTEGRATIONS: "Integrations",
-  PERMISSIONS: "Permissions",
-  ORGANIZATION: "Organization",
-  USAGE: "Usage",
+  AGENTS_AND_ACTIONS: "agentsAndActions",
+  DOCUMENTS_AND_KNOWLEDGE: "documentsAndKnowledge",
+  INTEGRATIONS: "integrations",
+  PERMISSIONS: "permissions",
+  ORGANIZATION: "organization",
+  USAGE: "usage",
 } as const;
 
 interface SidebarItemEntry {
@@ -57,21 +64,34 @@ function buildItems(
   settings: CombinedSettings | null,
   kgExposed: boolean,
   customAnalyticsEnabled: boolean,
-  hasSubscription: boolean
+  hasSubscription: boolean,
+  getSidebarLabel: (route: AdminRouteEntry) => string,
+  upgradePlanLabel: string
 ): SidebarItemEntry[] {
   const vectorDbEnabled = settings?.settings.vector_db_enabled !== false;
   const items: SidebarItemEntry[] = [];
 
-  const add = (section: string, route: Parameters<typeof sidebarItem>[0]) => {
-    items.push({ ...sidebarItem(route), section });
+  const add = (section: string, route: AdminRouteEntry) => {
+    items.push({
+      section,
+      name: getSidebarLabel(route),
+      icon: route.icon,
+      link: route.path,
+    });
   };
 
   const addDisabled = (
     section: string,
-    route: Parameters<typeof sidebarItem>[0],
+    route: AdminRouteEntry,
     isDisabled: boolean
   ) => {
-    items.push({ ...sidebarItem(route), section, disabled: isDisabled });
+    items.push({
+      section,
+      name: getSidebarLabel(route),
+      icon: route.icon,
+      link: route.path,
+      disabled: isDisabled,
+    });
   };
 
   // 1. No header — core configuration (admin only)
@@ -108,8 +128,10 @@ function buildItems(
     add(SECTIONS.DOCUMENTS_AND_KNOWLEDGE, ADMIN_ROUTES.DOCUMENT_SETS);
     if (!isCurator && !enableCloud) {
       items.push({
-        ...sidebarItem(ADMIN_ROUTES.INDEX_SETTINGS),
         section: SECTIONS.DOCUMENTS_AND_KNOWLEDGE,
+        name: getSidebarLabel(ADMIN_ROUTES.INDEX_SETTINGS),
+        icon: ADMIN_ROUTES.INDEX_SETTINGS.icon,
+        link: ADMIN_ROUTES.INDEX_SETTINGS.path,
         error: settings?.settings.needs_reindexing,
       });
     }
@@ -144,7 +166,7 @@ function buildItems(
     } else {
       items.push({
         section: SECTIONS.ORGANIZATION,
-        name: "Upgrade Plan",
+        name: upgradePlanLabel,
         icon: SvgArrowUpCircle,
         link: ADMIN_ROUTES.BILLING.path,
       });
@@ -191,6 +213,7 @@ export default function AdminSidebar({ enableCloudSS }: AdminSidebarProps) {
   const pathname = usePathname();
   const { customAnalyticsEnabled } = useCustomAnalyticsEnabled();
   const { user } = useUser();
+  const { t } = useAppLanguage();
   const settings = useSettingsContext();
   const enableEnterprise = usePaidEnterpriseFeaturesEnabled();
   const { data: billingData, isLoading: billingLoading } =
@@ -211,6 +234,11 @@ export default function AdminSidebar({ enableCloudSS }: AdminSidebarProps) {
     settings.enterpriseSettings?.application_name?.trim() ||
     DEFAULT_APPLICATION_NAME;
 
+  const getSidebarLabel = useCallback(
+    (route: AdminRouteEntry) => getAdminRouteCopy(route, t).sidebarLabel,
+    [t]
+  );
+
   const allItems = buildItems(
     isCurator,
     isPlatformAdmin,
@@ -219,7 +247,9 @@ export default function AdminSidebar({ enableCloudSS }: AdminSidebarProps) {
     settings,
     kgExposed,
     customAnalyticsEnabled,
-    hasSubscriptionOrLicense
+    hasSubscriptionOrLicense,
+    getSidebarLabel,
+    t("admin.sidebar.upgradePlan")
   );
 
   const itemExtractor = useCallback((item: SidebarItemEntry) => item.name, []);
@@ -239,12 +269,12 @@ export default function AdminSidebar({ enableCloudSS }: AdminSidebarProps) {
               href="/app"
               lowlight
             >
-              Exit Admin Panel
+              {t("admin.sidebar.exit")}
             </SidebarTab>
             <InputTypeIn
               variant="internal"
               leftSearchIcon
-              placeholder="Search..."
+              placeholder={t("admin.sidebar.search")}
               value={query}
               onChange={(e) => setQuery(e.target.value)}
             />
@@ -261,6 +291,9 @@ export default function AdminSidebar({ enableCloudSS }: AdminSidebarProps) {
                 prominence="muted"
                 widthVariant="full"
               />
+            </div>
+            <div className="w-full p-[0.38rem]">
+              <AppLanguageSelect />
             </div>
             <div className="flex flex-row gap-1 p-[0.38rem] w-full">
               <Text text03 secondaryAction>
@@ -315,7 +348,10 @@ export default function AdminSidebar({ enableCloudSS }: AdminSidebarProps) {
           }
 
           return (
-            <SidebarSection key={groupIndex} title={group.section}>
+            <SidebarSection
+              key={groupIndex}
+              title={t(`admin.sections.${group.section}` as TranslationKey)}
+            >
               {tabs}
             </SidebarSection>
           );

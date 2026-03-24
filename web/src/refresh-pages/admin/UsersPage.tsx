@@ -7,12 +7,14 @@ import * as SettingsLayouts from "@/layouts/settings-layouts";
 import { useScimToken } from "@/hooks/useScimToken";
 import { usePaidEnterpriseFeaturesEnabled } from "@/components/settings/usePaidEnterpriseFeaturesEnabled";
 import useUserCounts from "@/hooks/useUserCounts";
+import { ADMIN_ROUTES, getAdminRouteCopy } from "@/lib/admin-routes";
 import { UserStatus } from "@/lib/types";
 import type { StatusFilter } from "./UsersPage/interfaces";
 
 import UsersSummary from "./UsersPage/UsersSummary";
 import UsersTable from "./UsersPage/UsersTable";
 import InviteUsersModal from "./UsersPage/InviteUsersModal";
+import { useAppLanguage } from "@/providers/AppLanguageProvider";
 
 // ---------------------------------------------------------------------------
 // Users page content
@@ -65,15 +67,18 @@ function UsersContent() {
 
 export default function UsersPage() {
   const [inviteOpen, setInviteOpen] = useState(false);
+  const { t } = useAppLanguage();
+  const routeCopy = getAdminRouteCopy(ADMIN_ROUTES.USERS, t);
 
   return (
     <SettingsLayouts.Root width="lg">
       <SettingsLayouts.Header
-        title="Users & Requests"
+        title={routeCopy.title}
         icon={SvgUser}
+        description={t("users.page.description")}
         rightChildren={
           <Button icon={SvgUserPlus} onClick={() => setInviteOpen(true)}>
-            Invite Users
+            {t("users.page.invite")}
           </Button>
         }
       />

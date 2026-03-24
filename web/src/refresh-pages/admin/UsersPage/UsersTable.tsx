@@ -9,7 +9,8 @@ import { SvgDownload } from "@opal/icons";
 import SvgNoResult from "@opal/illustrations/no-result";
 import { IllustrationContent } from "@opal/layouts";
 import SimpleLoader from "@/refresh-components/loaders/SimpleLoader";
-import { UserRole, UserStatus, USER_STATUS_LABELS } from "@/lib/types";
+import Card from "@/refresh-components/cards/Card";
+import { UserRole, UserStatus } from "@/lib/types";
 import { timeAgo } from "@/lib/time";
 import Text from "@/refresh-components/texts/Text";
 import InputTypeIn from "@/refresh-components/inputs/InputTypeIn";
@@ -28,6 +29,8 @@ import type {
   StatusCountMap,
 } from "./interfaces";
 import { getInitials } from "./utils";
+import { useAppLanguage } from "@/providers/AppLanguageProvider";
+import { TranslateFn } from "@/lib/i18n/app-language";
 
 // ---------------------------------------------------------------------------
 // Column renderers
@@ -44,15 +47,30 @@ function renderNameColumn(email: string, row: UserRow) {
   );
 }
 
-function renderStatusColumn(value: UserStatus, row: UserRow) {
+function getLocalizedUserStatusLabel(value: UserStatus, t: TranslateFn) {
+  switch (value) {
+    case UserStatus.ACTIVE:
+      return t("common.status.active");
+    case UserStatus.INACTIVE:
+      return t("common.status.inactive");
+    case UserStatus.INVITED:
+      return t("common.status.invited");
+    case UserStatus.REQUESTED:
+      return t("common.status.requested");
+    default:
+      return value;
+  }
+}
+
+function renderStatusColumn(value: UserStatus, row: UserRow, t: TranslateFn) {
   return (
     <div className="flex flex-col">
       <Text as="span" mainUiBody text03>
-        {USER_STATUS_LABELS[value] ?? value}
+        {getLocalizedUserStatusLabel(value, t)}
       </Text>
       {row.is_scim_synced && (
         <Text as="span" secondaryBody text03>
-          SCIM synced
+          {t("users.table.status.scimSynced")}
         </Text>
       )}
     </div>
@@ -73,7 +91,7 @@ function renderLastUpdatedColumn(value: string | null) {
 
 const tc = createTableColumns<UserRow>();
 
-function buildColumns(onMutate: () => void) {
+function buildColumns(onMutate: () => void, t: TranslateFn) {
   return [
     tc.qualifier({
       content: "avatar-user",
@@ -81,13 +99,13 @@ function buildColumns(onMutate: () => void) {
       selectable: false,
     }),
     tc.column("email", {
-      header: "Name",
+      header: t("users.table.columns.name"),
       weight: 22,
       minWidth: 140,
       cell: renderNameColumn,
     }),
     tc.column("groups", {
-      header: "Groups",
+      header: t("users.table.columns.groups"),
       weight: 24,
       minWidth: 200,
       enableSorting: false,
@@ -96,19 +114,19 @@ function buildColumns(onMutate: () => void) {
       ),
     }),
     tc.column("role", {
-      header: "Account Type",
+      header: t("users.table.columns.accountType"),
       weight: 16,
       minWidth: 180,
       cell: (_value, row) => <UserRoleCell user={row} onMutate={onMutate} />,
     }),
     tc.column("status", {
-      header: "Status",
+      header: t("users.table.columns.status"),
       weight: 14,
       minWidth: 100,
-      cell: renderStatusColumn,
+      cell: (value, row) => renderStatusColumn(value, row, t),
     }),
     tc.column("updated_at", {
-      header: "Last Updated",
+      header: t("users.table.columns.lastUpdated"),
       weight: 14,
       minWidth: 100,
       cell: renderLastUpdatedColumn,
@@ -138,6 +156,7 @@ export default function UsersTable({
   roleCounts,
   statusCounts,
 }: UsersTableProps) {
+  const { t } = useAppLanguage();
   const [searchTerm, setSearchTerm] = useState("");
   const [selectedRoles, setSelectedRoles] = useState<UserRole[]>([]);
   const [selectedGroups, setSelectedGroups] = useState<number[]>([]);
@@ -156,7 +175,7 @@ export default function UsersTable({
 
   const { users, isLoading, error, refresh } = useAdminUsers();
 
-  const columns = useMemo(() => buildColumns(refresh), [refresh]);
+  const columns = useMemo(() => buildColumns(refresh, t), [refresh, t]);
 
   // Client-side filtering
   const filteredUsers = useMemo(() => {
@@ -183,39 +202,55 @@ export default function UsersTable({
 
   if (isLoading) {
     return (
-      <div className="flex justify-center py-12">
-        <SimpleLoader className="h-6 w-6" />
-      </div>
+      <Card>
+        <div className="flex justify-center py-12">
+          <SimpleLoader className="h-6 w-6" />
+        </div>
+      </Card>
     );
   }
 
   if (error) {
     return (
-      <Text as="p" secondaryBody text03>
-        Failed to load users. Please try refreshing the page.
-      </Text>
+      <Card>
+        <Text as="p" secondaryBody text03>
+          {t("users.table.error")}
+        </Text>
+      </Card>
     );
   }
 
   return (
-    <div className="flex flex-col gap-3">
-      <InputTypeIn
-        value={searchTerm}
-        onChange={(e) => setSearchTerm(e.target.value)}
-        placeholder="Search users..."
-        leftSearchIcon
-      />
-      <UserFilters
-        selectedRoles={selectedRoles}
-        onRolesChange={setSelectedRoles}
-        selectedGroups={selectedGroups}
-        onGroupsChange={setSelectedGroups}
-        groups={groupOptions}
-        selectedStatuses={selectedStatuses}
-        onStatusesChange={onStatusesChange}
-        roleCounts={roleCounts}
-        statusCounts={statusCounts}
-      />
+    <Card className="overflow-hidden" padding={0} gap={0}>
+      <div className="flex flex-col gap-4 p-5">
+        <div className="flex flex-col gap-1">
+          <Text as="p" headingH3>
+            {t("users.table.title")}
+          </Text>
+          <Text as="p" secondaryBody text03>
+            {t("users.table.description")}
+          </Text>
+        </div>
+
+        <InputTypeIn
+          value={searchTerm}
+          onChange={(e) => setSearchTerm(e.target.value)}
+          placeholder={t("users.table.search")}
+          leftSearchIcon
+        />
+        <UserFilters
+          selectedRoles={selectedRoles}
+          onRolesChange={setSelectedRoles}
+          selectedGroups={selectedGroups}
+          onGroupsChange={setSelectedGroups}
+          groups={groupOptions}
+          selectedStatuses={selectedStatuses}
+          onStatusesChange={onStatusesChange}
+          roleCounts={roleCounts}
+          statusCounts={statusCounts}
+        />
+      </div>
+
       <DataTable
         data={filteredUsers}
         columns={columns}
@@ -225,8 +260,8 @@ export default function UsersTable({
         emptyState={
           <IllustrationContent
             illustration={SvgNoResult}
-            title="No users found"
-            description="No users match the current filters."
+            title={t("users.table.noUsersTitle")}
+            description={t("users.table.noUsersDescription")}
           />
         }
         footer={{
@@ -236,14 +271,14 @@ export default function UsersTable({
               icon={SvgDownload}
               prominence="tertiary"
               size="sm"
-              tooltip="Download CSV"
-              aria-label="Download CSV"
+              tooltip={t("users.table.downloadCsv")}
+              aria-label={t("users.table.downloadCsv")}
               onClick={() => {
                 downloadUsersCsv().catch((err) => {
                   toast.error(
                     err instanceof Error
                       ? err.message
-                      : "Failed to download CSV"
+                      : t("users.table.downloadCsvFailed")
                   );
                 });
               }}
@@ -251,6 +286,6 @@ export default function UsersTable({
           ),
         }}
       />
-    </div>
+    </Card>
   );
 }

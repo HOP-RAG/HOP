@@ -86,7 +86,7 @@ function SettingsRoot({ width = "md", ...props }: SettingsRootProps) {
   return (
     <div
       id="page-wrapper-scroll-container"
-      className="w-full h-full flex flex-col items-center overflow-y-auto"
+      className="settings-layout-root w-full h-full flex flex-col items-center overflow-y-auto"
     >
       {/* WARNING: The id="page-wrapper-scroll-container" above is used by SettingsHeader
           to detect scroll position and show/hide the scroll shadow.
@@ -219,7 +219,7 @@ function SettingsHeader({
     <div
       ref={headerRef}
       className={cn(
-        "w-full bg-background-tint-01",
+        "settings-layout-header w-full bg-background-tint-01",
         isSticky && "sticky top-0 z-settings-header",
         backButton && "md:pt-4"
       )}
@@ -306,7 +306,7 @@ function SettingsBody(
 ) {
   return (
     <div
-      className="pt-6 pb-[4.5rem] px-4 flex flex-col gap-8 w-full"
+      className="settings-layout-body pt-6 pb-[4.5rem] px-4 flex flex-col gap-8 w-full"
       {...props}
     />
   );
