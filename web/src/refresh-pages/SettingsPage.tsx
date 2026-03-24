@@ -1667,6 +1667,30 @@ function ConnectorsSettings() {
           variant="section"
           widthVariant="full"
         />
+        <Card variant="secondary">
+          <Section
+            flexDirection="row"
+            justifyContent="between"
+            alignItems="start"
+            width="full"
+            gap={1}
+            wrap
+          >
+            <Section alignItems="start" gap={0.25}>
+              <Text headingH3 as="p">
+                Connector setup guides
+              </Text>
+              <Text mainContentBody text03 as="p">
+                Open bilingual docs with prerequisites, scopes, setup steps,
+                verification, and troubleshooting for every supported
+                connector.
+              </Text>
+            </Section>
+            <Button href="/connectors/docs" target="_blank">
+              Open guides
+            </Button>
+          </Section>
+        </Card>
         {hasConnectors ? (
           <>
             {/* Indexed Connectors */}

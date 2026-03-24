@@ -496,7 +496,23 @@ export function listSourceMetadata(): SourceMetadata[] {
 }
 
 export function getSourceDocLink(sourceType: ValidSources): string | null {
-  return SOURCE_METADATA_MAP[sourceType].docs || null;
+  const metadata = SOURCE_METADATA_MAP[sourceType];
+
+  if (!metadata) {
+    return null;
+  }
+
+  const regularSource = metadata.baseSourceType || sourceType;
+  if (
+    regularSource === ValidSources.NotApplicable ||
+    regularSource === ValidSources.IngestionApi ||
+    regularSource === ValidSources.UserFile ||
+    regularSource === ValidSources.CraftFile
+  ) {
+    return null;
+  }
+
+  return `/connectors/docs/${regularSource.replaceAll("_", "-")}`;
 }
 
 export const isValidSource = (sourceType: string) => {
