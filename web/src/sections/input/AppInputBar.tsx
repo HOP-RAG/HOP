@@ -667,6 +667,7 @@ const AppInputBar = React.memo(
           >
             <Button
               id="onyx-chat-input-send-button"
+              variant="action"
               icon={
                 isClassifying
                   ? SimpleLoader
