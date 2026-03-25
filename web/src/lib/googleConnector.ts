@@ -87,10 +87,12 @@ export const filterUploadedCredentials = <
   let uploadedCredentials: Credential<T>[] = [];
 
   if (credentials) {
-    uploadedCredentials = credentials.filter(
-      (credential) =>
-        credential.credential_json.authentication_method !== "oauth_interactive"
-    );
+    uploadedCredentials = credentials.filter((credential) => {
+      const authMethod = credential.credential_json.authentication_method;
+      return (
+        authMethod !== "oauth_interactive" && authMethod !== "platform_oauth"
+      );
+    });
 
     if (uploadedCredentials.length > 0 && uploadedCredentials[0]) {
       credential_id = uploadedCredentials[0].id;

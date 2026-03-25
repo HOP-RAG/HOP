@@ -19,14 +19,157 @@ import {
 import { refreshAllGoogleData } from "@/lib/googleConnector";
 import { ValidSources } from "@/lib/types";
 import { buildSimilarCredentialInfoURL } from "@/app/admin/connector/[ccPairId]/lib";
+import { startConnectorOAuthWithCustomClient } from "@/lib/connectors/connectorAccounts";
 import { getSourceDocLink } from "@/lib/sources";
 import { FiFile, FiCheck, FiLink, FiAlertTriangle } from "react-icons/fi";
 import { cn, truncateString } from "@/lib/utils";
+import { useAppLanguage } from "@/providers/AppLanguageProvider";
 
 type GoogleDriveCredentialJsonTypes = "authorized_user" | "service_account";
 
+function getGoogleDriveManualCopy(language: "en" | "es") {
+  if (language === "es") {
+    return {
+      invalidCredentialType:
+        "Tipo de credencial desconocido. Esperabamos 'OAuth Web application' o 'Service Account'.",
+      invalidFile: "Archivo invalido",
+      uploadAppSuccess: "Credenciales OAuth subidas correctamente",
+      uploadAppFailed: "No se pudieron subir las credenciales OAuth",
+      uploadServiceSuccess: "JSON de cuenta de servicio subido correctamente",
+      uploadServiceFailed: "No se pudo subir el JSON de cuenta de servicio",
+      uploadJsonOnly: "Por favor sube un archivo JSON",
+      uploadingFile: (name: string) => `Subiendo ${name}...`,
+      dropJsonHere: "Suelta el archivo JSON aqui",
+      selectJsonFile:
+        "Selecciona o arrastra el archivo JSON de credenciales...",
+      nonAdminWarning:
+        "Los curators no pueden configurar las credenciales de Google Drive. Para agregar este conector, contacta a un administrador.",
+      manualIntro:
+        "Este fallback legacy acepta un JSON de cliente OAuth Web application o un JSON de cuenta de servicio. Usalo solo si necesitas una configuracion manual o por compatibilidad.",
+      viewInstructions: "Ver instrucciones detalladas",
+      deleteCredentials: "Eliminar credenciales subidas",
+      authenticationComplete: "Autenticacion completada",
+      authenticationCompleteBody:
+        "Las credenciales legacy de Google Drive se cargaron y autenticaron correctamente.",
+      revokeAccess: "Revocar acceso",
+      completeStepOne:
+        "Completa primero la carga manual subiendo credenciales OAuth o un JSON de cuenta de servicio.",
+      primaryAdminLabel: "Correo del admin principal:",
+      primaryAdminSubtext:
+        "Ingresa el correo de un admin o owner de la organizacion de Google que posee los Google Drives que quieres indexar.",
+      creating: "Creando...",
+      createCredential: "Crear credencial",
+      oauthExplanation:
+        "Ahora autentica Google Drive via OAuth. Esto nos da acceso de lectura a los documentos que tu cuenta puede ver en Drive.",
+      authenticating: "Autenticando...",
+      authenticate: "Autenticar con Google Drive",
+      deleteServiceAccountSuccess:
+        "Se elimino correctamente el JSON de cuenta de servicio",
+      deleteAppSuccess: "Se eliminaron correctamente las credenciales OAuth",
+      deleteFailed: "No se pudieron eliminar las credenciales",
+      revokeBlocked:
+        "No puedes revocar la credencial de Google Drive mientras siga asociada a algun conector. Elimina primero los conectores asociados y luego vuelve a intentarlo.",
+      revokeSuccess: "La credencial de Google Drive se revoco correctamente",
+      validEmail: "Debe ser un correo valido",
+      required: "Obligatorio",
+      createServiceAccountSuccess:
+        "La credencial de cuenta de servicio se creo correctamente",
+      createServiceAccountFailed:
+        "No se pudo crear la credencial de cuenta de servicio",
+      authenticateFailed: "No se pudo autenticar con Google Drive",
+      genericFileName: "archivo",
+      customerOauthTitle: "Cliente OAuth propio",
+      customerOauthDescription:
+        "Usa tu propio cliente OAuth de Google solo si tu organizacion quiere gestionar su propia app en Google Cloud. ACTIVA seguira almacenando los tokens del conector de forma segura.",
+      customerOauthConnectedBody:
+        "Esta conexion usa un cliente OAuth gestionado por el cliente y ya tiene permisos para Google Drive.",
+      connectWithOwnClient: "Conectar con tu app de Google",
+      connectingWithOwnClient: "Conectando con tu app...",
+      clientIdLabel: "Google OAuth Client ID:",
+      clientIdSubtext:
+        "Client ID de tu app Web en Google Cloud para el acceso a Google Drive.",
+      clientSecretLabel: "Google OAuth Client Secret:",
+      clientSecretSubtext:
+        "Client secret del mismo cliente OAuth Web. Se usara solo para iniciar y refrescar esta conexion cifrada.",
+      legacyTitle: "JSON manual legacy",
+      legacyDescription:
+        "Solo usa este fallback si dependes del flujo antiguo por JSON o si necesitas una cuenta de servicio.",
+      showLegacySetup: "Mostrar fallback legacy",
+      hideLegacySetup: "Ocultar fallback legacy",
+    };
+  }
+
+  return {
+    invalidCredentialType:
+      "Unknown credential type. Expected 'OAuth Web application' or 'Service Account'.",
+    invalidFile: "Invalid file",
+    uploadAppSuccess: "OAuth app credentials uploaded successfully",
+    uploadAppFailed: "Failed to upload OAuth app credentials",
+    uploadServiceSuccess: "Service account JSON uploaded successfully",
+    uploadServiceFailed: "Failed to upload service account JSON",
+    uploadJsonOnly: "Please upload a JSON file",
+    uploadingFile: (name: string) => `Uploading ${name}...`,
+    dropJsonHere: "Drop JSON file here",
+    selectJsonFile: "Select or drag JSON credentials file...",
+    nonAdminWarning:
+      "Curators cannot configure Google Drive credentials. To add this connector, contact an administrator.",
+    manualIntro:
+      "This legacy fallback accepts either a Web application OAuth client JSON or a service account JSON. Use it only when you need manual or compatibility setup.",
+    viewInstructions: "View detailed setup instructions",
+    deleteCredentials: "Delete uploaded credentials",
+    authenticationComplete: "Authentication complete",
+    authenticationCompleteBody:
+      "Your legacy Google Drive credentials were uploaded and authenticated successfully.",
+    revokeAccess: "Revoke access",
+    completeStepOne:
+      "Please complete the manual upload first by providing either OAuth credentials or a service account JSON.",
+    primaryAdminLabel: "Primary Admin Email:",
+    primaryAdminSubtext:
+      "Enter the email of an admin or owner of the Google organization that owns the Google Drives you want to index.",
+    creating: "Creating...",
+    createCredential: "Create credential",
+    oauthExplanation:
+      "Next, authenticate with Google Drive via OAuth. This gives us read access to the documents your Google account can access in Drive.",
+    authenticating: "Authenticating...",
+    authenticate: "Authenticate with Google Drive",
+    deleteServiceAccountSuccess: "Service account JSON deleted successfully",
+    deleteAppSuccess: "OAuth app credentials deleted successfully",
+    deleteFailed: "Failed to delete credentials",
+    revokeBlocked:
+      "Cannot revoke the Google Drive credential while any connector is still associated with it. Delete the linked connectors first, then try again.",
+    revokeSuccess: "Google Drive credential revoked successfully",
+    validEmail: "Must be a valid email",
+    required: "Required",
+    createServiceAccountSuccess:
+      "Service account credential created successfully",
+    createServiceAccountFailed: "Failed to create service account credential",
+    authenticateFailed: "Failed to authenticate with Google Drive",
+    genericFileName: "file",
+    customerOauthTitle: "Customer-managed OAuth client",
+    customerOauthDescription:
+      "Use your own Google OAuth client only if your organization wants to manage its own Google Cloud app. ACTIVA will still store the connector tokens securely.",
+    customerOauthConnectedBody:
+      "This connection uses a customer-managed OAuth client and already has Google Drive access.",
+    connectWithOwnClient: "Connect with your Google app",
+    connectingWithOwnClient: "Connecting with your app...",
+    clientIdLabel: "Google OAuth Client ID:",
+    clientIdSubtext:
+      "Client ID from your Google Cloud Web application for Google Drive access.",
+    clientSecretLabel: "Google OAuth Client Secret:",
+    clientSecretSubtext:
+      "Client secret from the same Web OAuth client. It is only used to start and refresh this encrypted connector credential.",
+    legacyTitle: "Legacy manual JSON",
+    legacyDescription:
+      "Use this fallback only if you depend on the older JSON-based flow or need a service account.",
+    showLegacySetup: "Show legacy fallback",
+    hideLegacySetup: "Hide legacy fallback",
+  };
+}
+
 export const DriveJsonUpload = ({ onSuccess }: { onSuccess?: () => void }) => {
   const { mutate } = useSWRConfig();
+  const { language } = useAppLanguage();
+  const copy = getGoogleDriveManualCopy(language);
   const [isUploading, setIsUploading] = useState(false);
   const [fileName, setFileName] = useState<string | undefined>();
   const [isDragging, setIsDragging] = useState(false);
@@ -53,12 +196,10 @@ export const DriveJsonUpload = ({ onSuccess }: { onSuccess?: () => void }) => {
         } else if (appCredentialJson.type === "service_account") {
           credentialFileType = "service_account";
         } else {
-          throw new Error(
-            "Unknown credential type, expected one of 'OAuth Web application' or 'Service Account'"
-          );
+          throw new Error(copy.invalidCredentialType);
         }
       } catch (e) {
-        toast.error(`Invalid file provided - ${e}`);
+        toast.error(`${copy.invalidFile} - ${e}`);
         setIsUploading(false);
         return;
       }
@@ -75,14 +216,14 @@ export const DriveJsonUpload = ({ onSuccess }: { onSuccess?: () => void }) => {
           }
         );
         if (response.ok) {
-          toast.success("Successfully uploaded app credentials");
+          toast.success(copy.uploadAppSuccess);
           mutate("/api/manage/admin/connector/google-drive/app-credential");
           if (onSuccess) {
             onSuccess();
           }
         } else {
           const errorMsg = await response.text();
-          toast.error(`Failed to upload app credentials - ${errorMsg}`);
+          toast.error(`${copy.uploadAppFailed} - ${errorMsg}`);
         }
       }
 
@@ -98,7 +239,7 @@ export const DriveJsonUpload = ({ onSuccess }: { onSuccess?: () => void }) => {
           }
         );
         if (response.ok) {
-          toast.success("Successfully uploaded service account key");
+          toast.success(copy.uploadServiceSuccess);
           mutate(
             "/api/manage/admin/connector/google-drive/service-account-key"
           );
@@ -107,7 +248,7 @@ export const DriveJsonUpload = ({ onSuccess }: { onSuccess?: () => void }) => {
           }
         } else {
           const errorMsg = await response.text();
-          toast.error(`Failed to upload service account key - ${errorMsg}`);
+          toast.error(`${copy.uploadServiceFailed} - ${errorMsg}`);
         }
       }
       setIsUploading(false);
@@ -151,7 +292,7 @@ export const DriveJsonUpload = ({ onSuccess }: { onSuccess?: () => void }) => {
       ) {
         handleFileUpload(file);
       } else {
-        toast.error("Please upload a JSON file");
+        toast.error(copy.uploadJsonOnly);
       }
     }
   };
@@ -182,13 +323,12 @@ export const DriveJsonUpload = ({ onSuccess }: { onSuccess?: () => void }) => {
               )}
               <span className="text-sm text-text-500">
                 {isUploading
-                  ? `Uploading ${truncateString(fileName || "file", 50)}...`
+                  ? copy.uploadingFile(
+                      truncateString(fileName || copy.genericFileName, 50)
+                    )
                   : isDragging
-                    ? "Drop JSON file here"
-                    : truncateString(
-                        fileName || "Select or drag JSON credentials file...",
-                        50
-                      )}
+                    ? copy.dropJsonHere
+                    : truncateString(fileName || copy.selectJsonFile, 50)}
               </span>
             </div>
             <input
@@ -230,7 +370,8 @@ export const DriveJsonUploadSection = ({
   existingAuthCredential,
 }: DriveJsonUploadSectionProps) => {
   const { mutate } = useSWRConfig();
-  const router = useRouter();
+  const { language } = useAppLanguage();
+  const copy = getGoogleDriveManualCopy(language);
   const [localServiceAccountData, setLocalServiceAccountData] = useState(
     serviceAccountCredentialData
   );
@@ -256,10 +397,7 @@ export const DriveJsonUploadSection = ({
       <div>
         <div className="flex items-start py-3 px-4 bg-yellow-50/30 dark:bg-yellow-900/5 rounded">
           <FiAlertTriangle className="text-yellow-500 h-5 w-5 mr-2 mt-0.5 flex-shrink-0" />
-          <p className="text-sm">
-            Curators are unable to set up the Google Drive credentials. To add a
-            Google Drive connector, please contact an administrator.
-          </p>
+          <p className="text-sm">{copy.nonAdminWarning}</p>
         </div>
       </div>
     );
@@ -267,10 +405,7 @@ export const DriveJsonUploadSection = ({
 
   return (
     <div>
-      <p className="text-sm mb-3">
-        To connect your Google Drive, create credentials (either OAuth App or
-        Service Account), download the JSON file, and upload it below.
-      </p>
+      <p className="text-sm mb-3">{copy.manualIntro}</p>
       <div className="mb-4">
         <a
           className="text-primary hover:text-primary/80 flex items-center gap-1 text-sm"
@@ -279,7 +414,7 @@ export const DriveJsonUploadSection = ({
           rel="noreferrer"
         >
           <FiLink className="h-3 w-3" />
-          View detailed setup instructions
+          {copy.viewInstructions}
         </a>
       </div>
 
@@ -345,11 +480,9 @@ export const DriveJsonUploadSection = ({
                     );
 
                     toast.success(
-                      `Successfully deleted ${
-                        localServiceAccountData
-                          ? "service account key"
-                          : "app credentials"
-                      }`
+                      localServiceAccountData
+                        ? copy.deleteServiceAccountSuccess
+                        : copy.deleteAppSuccess
                     );
                     // Immediately update local state
                     if (localServiceAccountData) {
@@ -360,11 +493,11 @@ export const DriveJsonUploadSection = ({
                     handleSuccess();
                   } else {
                     const errorMsg = await response.text();
-                    toast.error(`Failed to delete credentials - ${errorMsg}`);
+                    toast.error(`${copy.deleteFailed} - ${errorMsg}`);
                   }
                 }}
               >
-                Delete Credentials
+                {copy.deleteCredentials}
               </Button>
             </div>
           )}
@@ -394,20 +527,134 @@ async function handleRevokeAccess(
   existingCredential:
     | Credential<GoogleDriveCredentialJson>
     | Credential<GoogleDriveServiceAccountCredentialJson>,
-  refreshCredentials: () => void
+  refreshCredentials: () => void,
+  copy: ReturnType<typeof getGoogleDriveManualCopy>
 ) {
   if (connectorAssociated) {
-    const message =
-      "Cannot revoke the Google Drive credential while any connector is still associated with the credential. " +
-      "Please delete all associated connectors, then try again.";
-    toast.error(message);
+    toast.error(copy.revokeBlocked);
     return;
   }
 
   await adminDeleteCredential(existingCredential.id);
-  toast.success("Successfully revoked the Google Drive credential!");
+  toast.success(copy.revokeSuccess);
 
   refreshCredentials();
+}
+
+interface DriveCustomerManagedOAuthSectionProps {
+  existingCredential?: Credential<GoogleDriveCredentialJson>;
+  connectorAssociated: boolean;
+  refreshCredentials: () => void;
+  isAdmin: boolean;
+}
+
+export function DriveCustomerManagedOAuthSection({
+  existingCredential,
+  connectorAssociated,
+  refreshCredentials,
+  isAdmin,
+}: DriveCustomerManagedOAuthSectionProps) {
+  const { language } = useAppLanguage();
+  const copy = getGoogleDriveManualCopy(language);
+
+  if (!isAdmin) {
+    return (
+      <div className="flex items-start py-3 px-4 bg-yellow-50/30 dark:bg-yellow-900/5 rounded mt-4">
+        <FiAlertTriangle className="text-yellow-500 h-5 w-5 mr-2 mt-0.5 flex-shrink-0" />
+        <p className="text-sm">{copy.nonAdminWarning}</p>
+      </div>
+    );
+  }
+
+  if (existingCredential) {
+    return (
+      <div className="mt-4">
+        <div className="py-3 px-4 bg-blue-50/30 dark:bg-blue-900/5 rounded mb-4 flex items-start">
+          <FiCheck className="text-blue-500 h-5 w-5 mr-2 mt-0.5 flex-shrink-0" />
+          <div className="flex-1">
+            <span className="font-medium block">
+              {copy.authenticationComplete}
+            </span>
+            <p className="text-sm mt-1 text-text-500 dark:text-text-400 break-words">
+              {copy.customerOauthConnectedBody}
+            </p>
+          </div>
+        </div>
+        <Button
+          variant="danger"
+          onClick={async () => {
+            await handleRevokeAccess(
+              connectorAssociated,
+              existingCredential,
+              refreshCredentials,
+              copy
+            );
+          }}
+        >
+          {copy.revokeAccess}
+        </Button>
+      </div>
+    );
+  }
+
+  return (
+    <div className="mt-4">
+      <p className="text-sm mb-4">{copy.customerOauthDescription}</p>
+      <Formik
+        initialValues={{
+          client_id: "",
+          client_secret: "",
+        }}
+        validationSchema={Yup.object().shape({
+          client_id: Yup.string().required(copy.required),
+          client_secret: Yup.string().required(copy.required),
+        })}
+        onSubmit={async (values, formikHelpers) => {
+          formikHelpers.setSubmitting(true);
+          try {
+            const redirectUrl = await startConnectorOAuthWithCustomClient(
+              ValidSources.GoogleDrive,
+              {
+                client_id: values.client_id,
+                client_secret: values.client_secret,
+              }
+            );
+            window.location.href = redirectUrl;
+          } catch (error) {
+            toast.error(
+              error instanceof Error ? error.message : copy.authenticateFailed
+            );
+            formikHelpers.setSubmitting(false);
+          }
+        }}
+      >
+        {({ isSubmitting }) => (
+          <Form>
+            <TextFormField
+              name="client_id"
+              label={copy.clientIdLabel}
+              subtext={copy.clientIdSubtext}
+            />
+            <TextFormField
+              name="client_secret"
+              label={copy.clientSecretLabel}
+              subtext={copy.clientSecretSubtext}
+              type="password"
+            />
+            <div className="flex">
+              <Disabled disabled={isSubmitting}>
+                <Button type="submit">
+                  {isSubmitting
+                    ? copy.connectingWithOwnClient
+                    : copy.connectWithOwnClient}
+                </Button>
+              </Disabled>
+            </div>
+          </Form>
+        )}
+      </Formik>
+    </div>
+  );
 }
 
 export const DriveAuthSection = ({
@@ -420,6 +667,8 @@ export const DriveAuthSection = ({
   user,
 }: DriveCredentialSectionProps) => {
   const router = useRouter();
+  const { language } = useAppLanguage();
+  const copy = getGoogleDriveManualCopy(language);
   const [isAuthenticating, setIsAuthenticating] = useState(false);
   const [localServiceAccountData, setLocalServiceAccountData] = useState(
     serviceAccountKeyData
@@ -460,10 +709,11 @@ export const DriveAuthSection = ({
           <div className="py-3 px-4 bg-blue-50/30 dark:bg-blue-900/5 rounded mb-4 flex items-start">
             <FiCheck className="text-blue-500 h-5 w-5 mr-2 mt-0.5 flex-shrink-0" />
             <div className="flex-1">
-              <span className="font-medium block">Authentication Complete</span>
+              <span className="font-medium block">
+                {copy.authenticationComplete}
+              </span>
               <p className="text-sm mt-1 text-text-500 dark:text-text-400 break-words">
-                Your Google Drive credentials have been successfully uploaded
-                and authenticated.
+                {copy.authenticationCompleteBody}
               </p>
             </div>
           </div>
@@ -473,11 +723,12 @@ export const DriveAuthSection = ({
               handleRevokeAccess(
                 connectorAssociated,
                 existingCredential,
-                refreshCredentials
+                refreshCredentials,
+                copy
               );
             }}
           >
-            Revoke Access
+            {copy.revokeAccess}
           </Button>
         </div>
       </div>
@@ -491,14 +742,11 @@ export const DriveAuthSection = ({
   ) {
     return (
       <div>
-        <SectionHeader>Google Drive Authentication</SectionHeader>
+        <SectionHeader>{copy.authenticate}</SectionHeader>
         <div className="mt-4">
           <div className="flex items-start py-3 px-4 bg-yellow-50/30 dark:bg-yellow-900/5 rounded">
             <FiAlertTriangle className="text-yellow-500 h-5 w-5 mr-2 mt-0.5 flex-shrink-0" />
-            <p className="text-sm">
-              Please complete Step 1 by uploading either OAuth credentials or a
-              Service Account key before proceeding with authentication.
-            </p>
+            <p className="text-sm">{copy.completeStepOne}</p>
           </div>
         </div>
       </div>
@@ -515,8 +763,8 @@ export const DriveAuthSection = ({
             }}
             validationSchema={Yup.object().shape({
               google_primary_admin: Yup.string()
-                .email("Must be a valid email")
-                .required("Required"),
+                .email(copy.validEmail)
+                .required(copy.required),
             })}
             onSubmit={async (values, formikHelpers) => {
               formikHelpers.setSubmitting(true);
@@ -535,20 +783,16 @@ export const DriveAuthSection = ({
                 );
 
                 if (response.ok) {
-                  toast.success(
-                    "Successfully created service account credential"
-                  );
+                  toast.success(copy.createServiceAccountSuccess);
                   refreshCredentials();
                 } else {
                   const errorMsg = await response.text();
                   toast.error(
-                    `Failed to create service account credential - ${errorMsg}`
+                    `${copy.createServiceAccountFailed} - ${errorMsg}`
                   );
                 }
               } catch (error) {
-                toast.error(
-                  `Failed to create service account credential - ${error}`
-                );
+                toast.error(`${copy.createServiceAccountFailed} - ${error}`);
               } finally {
                 formikHelpers.setSubmitting(false);
               }
@@ -558,13 +802,13 @@ export const DriveAuthSection = ({
               <Form>
                 <TextFormField
                   name="google_primary_admin"
-                  label="Primary Admin Email:"
-                  subtext="Enter the email of an admin/owner of the Google Organization that owns the Google Drive(s) you want to index."
+                  label={copy.primaryAdminLabel}
+                  subtext={copy.primaryAdminSubtext}
                 />
                 <div className="flex">
                   <Disabled disabled={isSubmitting}>
                     <Button type="submit">
-                      {isSubmitting ? "Creating..." : "Create Credential"}
+                      {isSubmitting ? copy.creating : copy.createCredential}
                     </Button>
                   </Disabled>
                 </div>
@@ -580,11 +824,7 @@ export const DriveAuthSection = ({
     return (
       <div>
         <div className="bg-background-50/30 dark:bg-background-900/20 rounded mb-4">
-          <p className="text-sm">
-            Next, you need to authenticate with Google Drive via OAuth. This
-            gives us read access to the documents you have access to in your
-            Google Drive account.
-          </p>
+          <p className="text-sm">{copy.oauthExplanation}</p>
         </div>
         <Disabled disabled={isAuthenticating}>
           <Button
@@ -599,20 +839,16 @@ export const DriveAuthSection = ({
                 if (authUrl) {
                   router.push(authUrl as Route);
                 } else {
-                  toast.error(errorMsg);
+                  toast.error(errorMsg || copy.authenticateFailed);
                   setIsAuthenticating(false);
                 }
               } catch (error) {
-                toast.error(
-                  `Failed to authenticate with Google Drive - ${error}`
-                );
+                toast.error(`${copy.authenticateFailed} - ${error}`);
                 setIsAuthenticating(false);
               }
             }}
           >
-            {isAuthenticating
-              ? "Authenticating..."
-              : "Authenticate with Google Drive"}
+            {isAuthenticating ? copy.authenticating : copy.authenticate}
           </Button>
         </Disabled>
       </div>

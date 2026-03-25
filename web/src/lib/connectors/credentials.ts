@@ -98,6 +98,7 @@ export interface SlackCredentialJson {
 export interface GmailCredentialJson {
   google_tokens: string;
   google_primary_admin: string;
+  authentication_method?: string;
 }
 
 export interface GoogleDriveCredentialJson {
@@ -109,6 +110,7 @@ export interface GoogleDriveCredentialJson {
 export interface GmailServiceAccountCredentialJson {
   google_service_account_key: string;
   google_primary_admin: string;
+  authentication_method?: string;
 }
 
 export interface GoogleDriveServiceAccountCredentialJson {

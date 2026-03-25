@@ -1,6 +1,8 @@
 "use client";
 
 import { useEffect, useState } from "react";
+import type { Route } from "next";
+import { useRouter } from "next/navigation";
 
 import { Form, Formik } from "formik";
 import * as Yup from "yup";
@@ -19,10 +21,23 @@ import {
   syncConnectorAccount,
   useConnectorProviderStatus,
 } from "@/lib/connectors/connectorAccounts";
+import {
+  getLocalizedCredentialMethodLabel,
+  getLocalizedStatusLabel,
+  getManualSetupToggleLabel,
+  getOAuthSectionDescription,
+  getPrimaryConnectLabel,
+} from "@/lib/connectors/authUi";
+import {
+  buildConnectorOAuthPopupReturnUrl,
+  openConnectorOAuthPopup,
+  shouldPreferOAuthPopup,
+} from "@/lib/connectors/oauthPopup";
 import { Credential } from "@/lib/connectors/credentials";
 import { getSourceDisplayName } from "@/lib/sources";
 import { ValidSources } from "@/lib/types";
 import { cn } from "@/lib/utils";
+import { useAppLanguage } from "@/providers/AppLanguageProvider";
 import Text from "@/refresh-components/texts/Text";
 
 interface OAuthConnectorAccountsSectionProps {
@@ -43,25 +58,6 @@ function isSelectableAccount(account: ConnectorAccountSnapshot) {
   );
 }
 
-function getStatusLabel(status: ConnectorAccountSnapshot["status"]) {
-  switch (status) {
-    case "connected":
-      return "Connected";
-    case "syncing":
-      return "Syncing";
-    case "needs_reconnect":
-      return "Needs reconnect";
-    case "connecting":
-      return "Connecting";
-    case "disconnected":
-      return "Disconnected";
-    case "error":
-      return "Error";
-    case "not_connected":
-      return "Not connected";
-  }
-}
-
 function getStatusClasses(status: ConnectorAccountSnapshot["status"]) {
   switch (status) {
     case "connected":
@@ -79,19 +75,6 @@ function getStatusClasses(status: ConnectorAccountSnapshot["status"]) {
   }
 }
 
-function getCredentialTypeLabel(credentialType: string) {
-  switch (credentialType) {
-    case "oauth":
-      return "OAuth";
-    case "service_account":
-      return "Service account";
-    case "api_key":
-      return "API key";
-    default:
-      return "Custom";
-  }
-}
-
 export default function OAuthConnectorAccountsSection({
   sourceType,
   selectedCredentialId,
@@ -100,7 +83,9 @@ export default function OAuthConnectorAccountsSection({
   advancedSetupOpen,
   onToggleAdvancedSetup,
 }: OAuthConnectorAccountsSectionProps) {
-  const displayName = getSourceDisplayName(sourceType);
+  const displayName = getSourceDisplayName(sourceType) || sourceType;
+  const { t } = useAppLanguage();
+  const router = useRouter();
   const {
     data: providerStatus,
     error,
@@ -110,6 +95,8 @@ export default function OAuthConnectorAccountsSection({
   const [activeAction, setActiveAction] = useState<string | null>(null);
 
   const accounts = providerStatus?.accounts ?? [];
+  const hasAdvancedAuthModes =
+    (providerStatus?.available_auth_modes.length ?? 0) > 0;
   const selectableAccounts = accounts.filter(isSelectableAccount);
 
   useEffect(() => {
@@ -128,16 +115,41 @@ export default function OAuthConnectorAccountsSection({
     onRefreshCredentials?.();
   };
 
+  const finishPopupFlow = async (redirectUrl?: string | null) => {
+    if (redirectUrl) {
+      const parsedRedirectUrl = new URL(redirectUrl, window.location.origin);
+      router.replace(
+        `${parsedRedirectUrl.pathname}${parsedRedirectUrl.search}${parsedRedirectUrl.hash}` as Route
+      );
+    }
+    await refreshData();
+  };
+
   const handleConnect = async (values: OAuthConnectFormValues) => {
     setActiveAction("connect");
     try {
-      const redirectUrl = await startConnectorOAuth(sourceType, values);
-      window.location.href = redirectUrl;
+      const desiredReturnUrl = shouldPreferOAuthPopup(sourceType)
+        ? buildConnectorOAuthPopupReturnUrl(sourceType)
+        : window.location.href;
+      const redirectUrl = await startConnectorOAuth(
+        sourceType,
+        values,
+        desiredReturnUrl
+      );
+
+      if (shouldPreferOAuthPopup(sourceType)) {
+        const popupResult = await openConnectorOAuthPopup(redirectUrl);
+        if (popupResult) {
+          await finishPopupFlow(popupResult.redirectUrl);
+        }
+      } else {
+        window.location.href = redirectUrl;
+      }
     } catch (error) {
       toast.error(
         error instanceof Error
           ? error.message
-          : `Failed to connect ${displayName}.`
+          : t("connectors.auth.errors.connect", { source: displayName })
       );
     } finally {
       setActiveAction(null);
@@ -150,17 +162,29 @@ export default function OAuthConnectorAccountsSection({
   ) => {
     setActiveAction(`reconnect-${accountId}`);
     try {
+      const desiredReturnUrl = shouldPreferOAuthPopup(sourceType)
+        ? buildConnectorOAuthPopupReturnUrl(sourceType)
+        : window.location.href;
       const redirectUrl = await reconnectConnectorAccount(
         sourceType,
         accountId,
-        additionalKwargs
+        additionalKwargs,
+        desiredReturnUrl
       );
-      window.location.href = redirectUrl;
+
+      if (shouldPreferOAuthPopup(sourceType)) {
+        const popupResult = await openConnectorOAuthPopup(redirectUrl);
+        if (popupResult) {
+          await finishPopupFlow(popupResult.redirectUrl);
+        }
+      } else {
+        window.location.href = redirectUrl;
+      }
     } catch (error) {
       toast.error(
         error instanceof Error
           ? error.message
-          : `Failed to reconnect ${displayName}.`
+          : t("connectors.auth.errors.reconnect", { source: displayName })
       );
     } finally {
       setActiveAction(null);
@@ -180,7 +204,7 @@ export default function OAuthConnectorAccountsSection({
       toast.error(
         error instanceof Error
           ? error.message
-          : `Failed to disconnect ${displayName}.`
+          : t("connectors.auth.errors.disconnect", { source: displayName })
       );
     } finally {
       setActiveAction(null);
@@ -195,7 +219,9 @@ export default function OAuthConnectorAccountsSection({
       await refreshData();
     } catch (error) {
       toast.error(
-        error instanceof Error ? error.message : `Failed to sync ${displayName}.`
+        error instanceof Error
+          ? error.message
+          : t("connectors.auth.errors.sync", { source: displayName })
       );
     } finally {
       setActiveAction(null);
@@ -210,7 +236,7 @@ export default function OAuthConnectorAccountsSection({
     Object.fromEntries(
       (providerStatus?.additional_kwargs ?? []).map((field) => [
         field.name,
-        Yup.string().required("Required"),
+        Yup.string().required(t("connectors.auth.errors.required")),
       ])
     )
   );
@@ -223,12 +249,13 @@ export default function OAuthConnectorAccountsSection({
     return (
       <div className="flex flex-col gap-3">
         <Text as="p" mainUiAction>
-          Existing connections
+          {t("connectors.auth.existingConnections")}
         </Text>
 
         {accounts.map((account) => {
           const isSelected = selectedCredentialId === account.credential?.id;
-          const hasSyncHistory = account.last_sync_at && account.last_sync_status;
+          const hasSyncHistory =
+            account.last_sync_at && account.last_sync_status;
 
           return (
             <div
@@ -254,12 +281,12 @@ export default function OAuthConnectorAccountsSection({
                       )}
                     >
                       <Text as="span" secondaryAction text01>
-                        {getStatusLabel(account.status)}
+                        {getLocalizedStatusLabel(account, t)}
                       </Text>
                     </div>
                     <div className="rounded-full bg-background-neutral-02 px-2 py-1">
                       <Text as="span" secondaryBody text03>
-                        {getCredentialTypeLabel(account.credential_type)}
+                        {getLocalizedCredentialMethodLabel(account, t)}
                       </Text>
                     </div>
                   </div>
@@ -273,14 +300,18 @@ export default function OAuthConnectorAccountsSection({
 
                   <Text as="p" text03 secondaryBody>
                     {account.linked_connector_count > 0
-                      ? `${account.linked_connector_count} connector(s) already use this connection.`
-                      : "Connect first, then continue to choose folders, spaces, or other source-specific options."}
+                      ? t("connectors.auth.linkedConnectors", {
+                          count: account.linked_connector_count,
+                        })
+                      : t("connectors.auth.noLinkedConnectors")}
                   </Text>
 
                   {hasSyncHistory && (
                     <Text as="p" text03 secondaryBody>
-                      Last sync: {account.last_sync_at} ({account.last_sync_status}
-                      )
+                      {t("connectors.auth.lastSync", {
+                        time: account.last_sync_at || "",
+                        status: account.last_sync_status || "",
+                      })}
                     </Text>
                   )}
 
@@ -301,7 +332,9 @@ export default function OAuthConnectorAccountsSection({
                       prominence={isSelected ? "secondary" : undefined}
                       onClick={() => onSelectCredential(account.credential)}
                     >
-                      {isSelected ? "Selected" : "Use connection"}
+                      {isSelected
+                        ? t("connectors.auth.buttons.selected")
+                        : t("connectors.auth.buttons.useConnection")}
                     </Button>
                   )}
 
@@ -312,7 +345,7 @@ export default function OAuthConnectorAccountsSection({
                         type="button"
                         onClick={() => handleSync(account.id)}
                       >
-                        Sync now
+                        {t("connectors.auth.buttons.syncNow")}
                       </Button>
                     </Disabled>
                   )}
@@ -327,24 +360,25 @@ export default function OAuthConnectorAccountsSection({
                           handleReconnect(account.id, additionalKwargs)
                         }
                       >
-                        Reconnect
+                        {t("connectors.auth.buttons.reconnect")}
                       </Button>
                     </Disabled>
                   )}
 
-                  {account.can_disconnect && account.status !== "disconnected" && (
-                    <Disabled
-                      disabled={activeAction === `disconnect-${account.id}`}
-                    >
-                      <Button
-                        prominence="secondary"
-                        type="button"
-                        onClick={() => handleDisconnect(account)}
+                  {account.can_disconnect &&
+                    account.status !== "disconnected" && (
+                      <Disabled
+                        disabled={activeAction === `disconnect-${account.id}`}
                       >
-                        Disconnect
-                      </Button>
-                    </Disabled>
-                  )}
+                        <Button
+                          prominence="secondary"
+                          type="button"
+                          onClick={() => handleDisconnect(account)}
+                        >
+                          {t("connectors.auth.buttons.disconnect")}
+                        </Button>
+                      </Disabled>
+                    )}
                 </div>
               </div>
             </div>
@@ -358,12 +392,10 @@ export default function OAuthConnectorAccountsSection({
     <CardSection className="flex flex-col gap-6">
       <div className="flex flex-col gap-2">
         <Text as="p" headingH3>
-          Connect {displayName}
+          {t("connectors.auth.title", { source: displayName })}
         </Text>
         <Text as="p" text03 mainUiBody>
-          OAuth is the default path here. Connect your account, approve access,
-          and then continue with connector-specific setup like folder or source
-          selection.
+          {getOAuthSectionDescription(sourceType, t)}
         </Text>
       </div>
 
@@ -372,8 +404,7 @@ export default function OAuthConnectorAccountsSection({
       ) : error && !providerStatus ? (
         <div className="rounded-16 border border-border-02 bg-background-neutral-01 p-4">
           <Text as="p" text03 mainUiBody>
-            We could not load the shared connection status right now. You can
-            still continue with advanced setup below.
+            {t("connectors.auth.loadError")}
           </Text>
         </div>
       ) : (
@@ -407,9 +438,12 @@ export default function OAuthConnectorAccountsSection({
                         disabled={isSubmitting || activeAction === "connect"}
                       >
                         <Button type="submit" variant="action">
-                          {accounts.length > 0
-                            ? `Connect another ${displayName} account`
-                            : `Connect ${displayName}`}
+                          {getPrimaryConnectLabel(
+                            sourceType,
+                            displayName,
+                            accounts.length > 0,
+                            t
+                          )}
                         </Button>
                       </Disabled>
                       <Button
@@ -417,9 +451,11 @@ export default function OAuthConnectorAccountsSection({
                         type="button"
                         onClick={onToggleAdvancedSetup}
                       >
-                        {advancedSetupOpen
-                          ? "Hide advanced setup"
-                          : "Use custom credentials"}
+                        {getManualSetupToggleLabel(
+                          sourceType,
+                          advancedSetupOpen,
+                          t
+                        )}
                       </Button>
                     </div>
                   </Form>
@@ -433,27 +469,25 @@ export default function OAuthConnectorAccountsSection({
           {!providerStatus?.oauth_enabled && accounts.length === 0 && (
             <div className="rounded-16 border border-border-02 bg-background-neutral-01 p-4">
               <Text as="p" text03 mainUiBody>
-                OAuth is not available for this connector yet. You can use the
-                advanced setup path below.
+                {t("connectors.auth.oauthUnavailable")}
               </Text>
             </div>
           )}
 
           {!providerStatus?.oauth_enabled && renderAccounts({})}
 
-          {!providerStatus?.oauth_enabled && accounts.length > 0 && (
-            <div className="flex justify-start">
-              <Button
-                prominence="secondary"
-                type="button"
-                onClick={onToggleAdvancedSetup}
-              >
-                {advancedSetupOpen
-                  ? "Hide advanced setup"
-                  : "Use custom credentials"}
-              </Button>
-            </div>
-          )}
+          {!providerStatus?.oauth_enabled &&
+            (accounts.length > 0 || hasAdvancedAuthModes) && (
+              <div className="flex justify-start">
+                <Button
+                  prominence="secondary"
+                  type="button"
+                  onClick={onToggleAdvancedSetup}
+                >
+                  {getManualSetupToggleLabel(sourceType, advancedSetupOpen, t)}
+                </Button>
+              </div>
+            )}
         </>
       )}
     </CardSection>

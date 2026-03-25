@@ -1,6 +1,7 @@
 "use client";
 
 import Link from "next/link";
+import type { Route } from "next";
 
 import { Button } from "@opal/components";
 import { SvgArrowLeft, SvgArrowRight } from "@opal/icons";
@@ -63,7 +64,10 @@ function PointGrid({ items }: { items: ConnectorDocsPoint[] }) {
     <div className="connector-docs-grid connector-docs-grid--two">
       {items.map((item) => (
         <Card
-          key={`${localize(item.title, language)}-${localize(item.body, language)}`}
+          key={`${localize(item.title, language)}-${localize(
+            item.body,
+            language
+          )}`}
           variant="secondary"
           className="connector-docs-section-card"
         >
@@ -189,7 +193,12 @@ export function ConnectorDocsIndexPage() {
                     ? "Guías bilingües para cada integración soportada"
                     : "Bilingual guides for every supported integration"}
                 </Text>
-                <Text mainContentBody text03 as="p" className="connector-docs-hero-copy">
+                <Text
+                  mainContentBody
+                  text03
+                  as="p"
+                  className="connector-docs-hero-copy"
+                >
                   {language === "es"
                     ? "Estas páginas explican requisitos, permisos, pasos exactos, verificación y recuperación de errores para que un equipo pueda completar la conexión sin depender de soporte."
                     : "These pages explain requirements, permissions, exact setup steps, verification, and recovery paths so a team can complete the connection without waiting on support."}
@@ -206,7 +215,9 @@ export function ConnectorDocsIndexPage() {
                   <Text figureSmallLabel text02 as="p">
                     {language === "es" ? "Cobertura" : "Coverage"}
                   </Text>
-                  <Text headingH3 as="p">{entries.length}</Text>
+                  <Text headingH3 as="p">
+                    {entries.length}
+                  </Text>
                   <Text mainUiBody text03 as="p">
                     {language === "es"
                       ? "páginas generadas desde los conectores soportados del producto"
@@ -219,7 +230,9 @@ export function ConnectorDocsIndexPage() {
                   <Text figureSmallLabel text02 as="p">
                     {language === "es" ? "Idiomas" : "Languages"}
                   </Text>
-                  <Text headingH3 as="p">ES / EN</Text>
+                  <Text headingH3 as="p">
+                    ES / EN
+                  </Text>
                   <Text mainUiBody text03 as="p">
                     {language === "es"
                       ? "un cambio de idioma impacta toda la biblioteca"
@@ -246,13 +259,18 @@ export function ConnectorDocsIndexPage() {
           </Section>
         </Card>
 
-        <Section alignItems="start" gap={1.25} className="connector-docs-groups">
+        <Section
+          alignItems="start"
+          gap={1.25}
+          className="connector-docs-groups"
+        >
           {Object.entries(grouped).map(([category, categoryEntries]) => {
             const typedCategory = category as SourceCategory;
-            const entriesInCategory = (categoryEntries || []).sort((left, right) =>
-              getSourceMetadata(left.source).displayName.localeCompare(
-                getSourceMetadata(right.source).displayName
-              )
+            const entriesInCategory = (categoryEntries || []).sort(
+              (left, right) =>
+                getSourceMetadata(left.source).displayName.localeCompare(
+                  getSourceMetadata(right.source).displayName
+                )
             );
 
             return (
@@ -275,7 +293,11 @@ export function ConnectorDocsIndexPage() {
                     return (
                       <Link
                         key={entry.source}
-                        href={`${getConnectorDocsIndexPath()}/${entry.slug}`}
+                        href={
+                          `${getConnectorDocsIndexPath()}/${
+                            entry.slug
+                          }` as Route
+                        }
                         className="connector-docs-card-link"
                       >
                         <Card className="connector-docs-source-card">
@@ -288,7 +310,10 @@ export function ConnectorDocsIndexPage() {
                               gap={0.75}
                             >
                               <div className="connector-docs-source-icon">
-                                <SourceIcon sourceType={entry.source} iconSize={24} />
+                                <SourceIcon
+                                  sourceType={entry.source}
+                                  iconSize={24}
+                                />
                               </div>
                               <div className="connector-docs-chip">
                                 <Text secondaryAction text04 as="p">
@@ -308,7 +333,9 @@ export function ConnectorDocsIndexPage() {
 
                             <div className="connector-docs-source-footer">
                               <Text mainUiAction text04 as="p">
-                                {language === "es" ? "Abrir guía" : "Open guide"}
+                                {language === "es"
+                                  ? "Abrir guía"
+                                  : "Open guide"}
                               </Text>
                               <SvgArrowRight className="connector-docs-link-icon" />
                             </div>
@@ -327,18 +354,34 @@ export function ConnectorDocsIndexPage() {
   );
 }
 
-export function ConnectorDocsDetailPage({ entry }: { entry: ConnectorDocsEntry }) {
+export function ConnectorDocsDetailPage({
+  entry,
+}: {
+  entry: ConnectorDocsEntry;
+}) {
   const { language } = useAppLanguage();
   const sourceMetadata = getSourceMetadata(entry.source);
 
   const navItems = [
     { id: "overview", label: language === "es" ? "Resumen" : "Overview" },
-    { id: "before-you-start", label: language === "es" ? "Antes de empezar" : "Before you start" },
+    {
+      id: "before-you-start",
+      label: language === "es" ? "Antes de empezar" : "Before you start",
+    },
     { id: "setup", label: language === "es" ? "Pasos" : "Setup steps" },
-    { id: "permissions", label: language === "es" ? "Permisos" : "Permissions" },
+    {
+      id: "permissions",
+      label: language === "es" ? "Permisos" : "Permissions",
+    },
     { id: "mcp", label: language === "es" ? "MCP" : "MCP details" },
-    { id: "verification", label: language === "es" ? "Verificación" : "Verification" },
-    { id: "troubleshooting", label: language === "es" ? "Errores" : "Troubleshooting" },
+    {
+      id: "verification",
+      label: language === "es" ? "Verificación" : "Verification",
+    },
+    {
+      id: "troubleshooting",
+      label: language === "es" ? "Errores" : "Troubleshooting",
+    },
     { id: "faq", label: "FAQ" },
   ];
 
@@ -347,7 +390,7 @@ export function ConnectorDocsDetailPage({ entry }: { entry: ConnectorDocsEntry }
       <div className="connector-docs-frame">
         <Section alignItems="start" gap={1.1}>
           <Link
-            href={getConnectorDocsIndexPath()}
+            href={getConnectorDocsIndexPath() as Route}
             className="connector-docs-back-link"
           >
             <SvgArrowLeft className="connector-docs-link-icon" />
@@ -391,7 +434,12 @@ export function ConnectorDocsDetailPage({ entry }: { entry: ConnectorDocsEntry }
                   <Text headingH1 as="p" className="connector-docs-hero-title">
                     {sourceMetadata.displayName}
                   </Text>
-                  <Text mainContentBody text03 as="p" className="connector-docs-hero-copy">
+                  <Text
+                    mainContentBody
+                    text03
+                    as="p"
+                    className="connector-docs-hero-copy"
+                  >
                     {localize(entry.overview.description, language)}
                   </Text>
                 </Section>
@@ -399,10 +447,15 @@ export function ConnectorDocsDetailPage({ entry }: { entry: ConnectorDocsEntry }
                 <Section alignItems="start" gap={0.75}>
                   <AppLanguageSelect />
                   <Button href={entry.setupUrl}>
-                    {language === "es" ? "Abrir setup en ACTIVA" : "Open setup in ACTIVA"}
+                    {language === "es"
+                      ? "Abrir setup en ACTIVA"
+                      : "Open setup in ACTIVA"}
                   </Button>
                   {entry.secondarySetupUrl ? (
-                    <Button href={entry.secondarySetupUrl} prominence="internal">
+                    <Button
+                      href={entry.secondarySetupUrl}
+                      prominence="internal"
+                    >
                       {language === "es"
                         ? "Abrir flujo alternativo"
                         : "Open alternate flow"}
@@ -413,7 +466,11 @@ export function ConnectorDocsDetailPage({ entry }: { entry: ConnectorDocsEntry }
 
               <div className="connector-docs-nav">
                 {navItems.map((item) => (
-                  <a key={item.id} href={`#${item.id}`} className="connector-docs-nav-pill">
+                  <a
+                    key={item.id}
+                    href={`#${item.id}`}
+                    className="connector-docs-nav-pill"
+                  >
                     {item.label}
                   </a>
                 ))}
@@ -492,7 +549,9 @@ export function ConnectorDocsDetailPage({ entry }: { entry: ConnectorDocsEntry }
             <Section alignItems="start" gap={0.9}>
               <SectionHeading
                 id="before-you-start"
-                title={copyFor(language === "es" ? "Antes de empezar" : "Before you start")}
+                title={copyFor(
+                  language === "es" ? "Antes de empezar" : "Before you start"
+                )}
               />
               <PointGrid items={entry.beforeYouStart} />
             </Section>
@@ -516,7 +575,11 @@ export function ConnectorDocsDetailPage({ entry }: { entry: ConnectorDocsEntry }
             <Section alignItems="start" gap={0.9}>
               <SectionHeading
                 id="permissions"
-                title={copyFor(language === "es" ? "Permisos y scopes" : "Permissions and scopes")}
+                title={copyFor(
+                  language === "es"
+                    ? "Permisos y scopes"
+                    : "Permissions and scopes"
+                )}
               />
               <PointGrid items={entry.permissions} />
             </Section>
@@ -526,7 +589,11 @@ export function ConnectorDocsDetailPage({ entry }: { entry: ConnectorDocsEntry }
             <Section alignItems="start" gap={0.9}>
               <SectionHeading
                 id="mcp"
-                title={copyFor(language === "es" ? "Detalles de conexión MCP" : "MCP connection details")}
+                title={copyFor(
+                  language === "es"
+                    ? "Detalles de conexión MCP"
+                    : "MCP connection details"
+                )}
               />
               <PointGrid items={entry.mcp} />
             </Section>
@@ -536,7 +603,9 @@ export function ConnectorDocsDetailPage({ entry }: { entry: ConnectorDocsEntry }
             <Section alignItems="start" gap={0.9}>
               <SectionHeading
                 id="verification"
-                title={copyFor(language === "es" ? "Verificación" : "Verification")}
+                title={copyFor(
+                  language === "es" ? "Verificación" : "Verification"
+                )}
               />
               <PointGrid items={entry.verification} />
             </Section>
@@ -558,10 +627,7 @@ export function ConnectorDocsDetailPage({ entry }: { entry: ConnectorDocsEntry }
 
           <Card className="connector-docs-section">
             <Section alignItems="start" gap={0.9}>
-              <SectionHeading
-                id="faq"
-                title={copyFor("FAQ")}
-              />
+              <SectionHeading id="faq" title={copyFor("FAQ")} />
               <FaqList items={entry.faq} />
             </Section>
           </Card>
@@ -584,7 +650,9 @@ export function ConnectorDocsDetailPage({ entry }: { entry: ConnectorDocsEntry }
                     className="connector-docs-section-card"
                   >
                     <Section alignItems="start" gap={0.45}>
-                      <Text headingH3 as="p">{example.field}</Text>
+                      <Text headingH3 as="p">
+                        {example.field}
+                      </Text>
                       <Code>{example.example}</Code>
                     </Section>
                   </Card>

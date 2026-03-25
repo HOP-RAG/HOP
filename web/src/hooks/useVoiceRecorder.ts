@@ -1,8 +1,6 @@
 import { useState, useRef, useCallback, useEffect } from "react";
 import { buildBrowserWebSocketUrl } from "@/lib/backendUrl";
 
-import { IS_DEV } from "@/lib/constants";
-
 // Target format for OpenAI Realtime API
 const TARGET_SAMPLE_RATE = 24000;
 const CHUNK_INTERVAL_MS = 250;
@@ -247,12 +245,11 @@ class VoiceRecorderSession {
     }
     const { token } = await tokenResponse.json();
 
-    const protocol = window.location.protocol === "https:" ? "wss:" : "ws:";
-    const host = IS_DEV ? "localhost:8080" : window.location.host;
-    const path = IS_DEV
-      ? "/voice/transcribe/stream"
-      : "/api/voice/transcribe/stream";
-    return `${protocol}//${host}${path}?token=${encodeURIComponent(token)}`;
+    return buildBrowserWebSocketUrl({
+      directPath: "/voice/transcribe/stream",
+      proxiedPath: "/api/voice/transcribe/stream",
+      token,
+    });
   }
 
   private waitForConnection(): Promise<void> {
