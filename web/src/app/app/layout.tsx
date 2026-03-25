@@ -26,7 +26,7 @@ export default async function Layout({ children }: LayoutProps) {
           persists across page navigations (e.g., sidebar clicks during playback).
           It only activates WebSocket connections when TTS is actually triggered. */}
       <VoiceModeProvider>
-        <div className="flex flex-row w-full h-full">
+        <div className="app-admin-surface flex flex-row w-full h-full">
           <AppSidebar />
           {children}
         </div>

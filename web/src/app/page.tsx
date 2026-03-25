@@ -1,4 +1,5 @@
 import type { Route } from "next";
+import { unstable_noStore as noStore } from "next/cache";
 import { redirect } from "next/navigation";
 
 import Landing from "@/app/Landing";
@@ -8,6 +9,8 @@ const APP_ROUTE: Route = "/app";
 const WAITING_ON_VERIFICATION_ROUTE: Route = "/auth/waiting-on-verification";
 
 export default async function Page() {
+  noStore();
+
   try {
     const [authTypeMetadata, currentUser] = await Promise.all([
       getAuthTypeMetadataSS(),
