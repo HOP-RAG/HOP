@@ -170,6 +170,23 @@ class ConnectorCredentialPairStatus(str, PyEnum):
         return self in self.active_statuses()
 
 
+class ConnectorAccountStatus(str, PyEnum):
+    NOT_CONNECTED = "not_connected"
+    CONNECTING = "connecting"
+    CONNECTED = "connected"
+    SYNCING = "syncing"
+    NEEDS_RECONNECT = "needs_reconnect"
+    ERROR = "error"
+    DISCONNECTED = "disconnected"
+
+
+class ConnectorCredentialType(str, PyEnum):
+    OAUTH = "oauth"
+    SERVICE_ACCOUNT = "service_account"
+    API_KEY = "api_key"
+    CUSTOM = "custom"
+
+
 class AccessType(str, PyEnum):
     PUBLIC = "public"
     PRIVATE = "private"

@@ -14,14 +14,15 @@ import { submitFiles } from "@/app/admin/connectors/[connector]/pages/utils/file
 import { submitGoogleSite } from "@/app/admin/connectors/[connector]/pages/utils/google_site";
 import AdvancedFormPage from "@/app/admin/connectors/[connector]/pages/Advanced";
 import DynamicConnectionForm from "@/app/admin/connectors/[connector]/pages/DynamicConnectorCreationForm";
+import OAuthConnectorAccountsSection from "@/components/admin/connectors/OAuthConnectorAccountsSection";
 import CreateCredential from "@/components/credentials/actions/CreateCredential";
 import ModifyCredential from "@/components/credentials/actions/ModifyCredential";
-import {
-  ConfigurableSources,
-  oauthSupportedSources,
-  ValidSources,
-} from "@/lib/types";
+import { ConfigurableSources, ValidSources } from "@/lib/types";
 import { Credential, credentialTemplates } from "@/lib/connectors/credentials";
+import {
+  getConnectorProviderStatusUrl,
+  useConnectorProviderStatus,
+} from "@/lib/connectors/connectorAccounts";
 import {
   ConnectionConfiguration,
   connectorConfigs,
@@ -35,28 +36,14 @@ import {
 } from "@/lib/connectors/connectors";
 import Modal from "@/refresh-components/Modal";
 import { GmailMain } from "@/app/admin/connectors/[connector]/pages/gmail/GmailPage";
-import {
-  useGmailCredentials,
-  useGoogleDriveCredentials,
-} from "@/app/admin/connectors/[connector]/pages/utils/hooks";
 import { Formik } from "formik";
 import NavigationRow from "@/app/admin/connectors/[connector]/NavigationRow";
-import { useRouter } from "next/navigation";
+import { useRouter, useSearchParams } from "next/navigation";
 import CardSection from "@/components/admin/CardSection";
-import { prepareOAuthAuthorizationRequest } from "@/lib/oauth_utils";
-import {
-  EE_ENABLED,
-  NEXT_PUBLIC_CLOUD_ENABLED,
-  NEXT_PUBLIC_TEST_ENV,
-} from "@/lib/constants";
-import {
-  getConnectorOauthRedirectUrl,
-  useOAuthDetails,
-} from "@/lib/connectors/oauth";
+import { getConnectorOauthRedirectUrl, useOAuthDetails } from "@/lib/connectors/oauth";
 import { CreateStdOAuthCredential } from "@/components/credentials/actions/CreateStdOAuthCredential";
 import { Spinner } from "@/components/Spinner";
 import { Button } from "@opal/components";
-import { Disabled } from "@opal/core";
 import { deleteConnector } from "@/lib/connector";
 import ConnectorDocsLink from "@/components/admin/connectors/ConnectorDocsLink";
 import Text from "@/refresh-components/texts/Text";
@@ -132,30 +119,15 @@ export default function AddConnector({
 }: {
   connector: ConfigurableSources;
 }) {
-  const [currentPageUrl, setCurrentPageUrl] = useState<string | null>(null);
-  const [oauthUrl, setOauthUrl] = useState<string | null>(null);
-  const [isAuthorizing, setIsAuthorizing] = useState(false);
-  const [isAuthorizeVisible, setIsAuthorizeVisible] = useState(false);
-  useEffect(() => {
-    if (typeof window !== "undefined") {
-      setCurrentPageUrl(window.location.href);
-    }
-
-    if (EE_ENABLED && (NEXT_PUBLIC_CLOUD_ENABLED || NEXT_PUBLIC_TEST_ENV)) {
-      const sourceMetadata = getSourceMetadata(connector);
-      if (sourceMetadata?.oauthSupported == true) {
-        setIsAuthorizeVisible(true);
-      }
-    }
-  }, []);
-
   const router = useRouter();
+  const searchParams = useSearchParams();
 
   // State for managing credentials and files
   const [currentCredential, setCurrentCredential] =
     useState<Credential<any> | null>(null);
   const [createCredentialFormToggle, setCreateCredentialFormToggle] =
     useState(false);
+  const [advancedSetupOpen, setAdvancedSetupOpen] = useState(false);
 
   // Fetch credentials data
   const { data: credentials } = useSWR<Credential<any>[]>(
@@ -172,6 +144,7 @@ export default function AddConnector({
 
   const { data: oauthDetails, isLoading: oauthDetailsLoading } =
     useOAuthDetails(connector);
+  const { data: connectorProviderStatus } = useConnectorProviderStatus(connector);
 
   // Get credential template and configuration
   const credentialTemplate = credentialTemplates[connector];
@@ -194,15 +167,83 @@ export default function AddConnector({
     };
   }, []);
 
-  // Hooks for Google Drive and Gmail credentials
-  const { liveGDriveCredential } = useGoogleDriveCredentials(connector);
-  const { liveGmailCredential } = useGmailCredentials(connector);
+  const connectorAccountCredentialId = searchParams?.get("credentialId");
+  const connectorAccountId = searchParams?.get("connectorAccountId");
+  const supportsSharedConnectorAccounts = Boolean(
+    connectorProviderStatus?.oauth_enabled ||
+      (connectorProviderStatus?.accounts.length ?? 0) > 0
+  );
+  const credentialActivated = currentCredential;
 
-  // Check if credential is activated
-  const credentialActivated =
-    (connector === "google_drive" && liveGDriveCredential) ||
-    (connector === "gmail" && liveGmailCredential) ||
-    currentCredential;
+  useEffect(() => {
+    if (!credentials) {
+      return;
+    }
+
+    const matchingCredentialFromQuery =
+      connectorAccountCredentialId != null
+        ? credentials.find(
+            (credential) =>
+              credential.id === Number.parseInt(connectorAccountCredentialId, 10)
+          )
+        : null;
+
+    const matchingCredentialFromAccount =
+      connectorAccountId != null
+        ? connectorProviderStatus?.accounts.find(
+            (account) =>
+              account.id === Number.parseInt(connectorAccountId, 10) &&
+              account.credential
+          )?.credential
+        : null;
+
+    const preferredCredential =
+      matchingCredentialFromQuery ||
+      matchingCredentialFromAccount ||
+      connectorProviderStatus?.accounts.find(
+        (account) =>
+          account.credential && account.credential.id === currentCredential?.id
+      )?.credential ||
+      (currentCredential == null && supportsSharedConnectorAccounts
+        ? connectorProviderStatus?.accounts.find(
+            (account) =>
+              account.credential &&
+              (account.status === "connected" || account.status === "syncing")
+          )?.credential
+        : null);
+
+    if (
+      preferredCredential &&
+      preferredCredential.id !== currentCredential?.id
+    ) {
+      setCurrentCredential(preferredCredential);
+      setAllowCreate(true);
+    }
+
+    if (
+      preferredCredential &&
+      (connectorAccountCredentialId != null || connectorAccountId != null)
+    ) {
+      const updatedSearchParams = new URLSearchParams(searchParams?.toString());
+      updatedSearchParams.delete("credentialId");
+      updatedSearchParams.delete("connectorAccountId");
+      const newSearch = updatedSearchParams.toString();
+      window.history.replaceState(
+        null,
+        "",
+        newSearch ? `?${newSearch}` : window.location.pathname
+      );
+    }
+  }, [
+    connectorAccountCredentialId,
+    connectorAccountId,
+    connectorProviderStatus,
+    credentials,
+    currentCredential,
+    searchParams,
+    setAllowCreate,
+    supportsSharedConnectorAccounts,
+  ]);
 
   // Check if there are no credentials
   const noCredentials = credentialTemplate == null;
@@ -215,7 +256,7 @@ export default function AddConnector({
     if (!noCredentials && !credentialActivated && formStep != 0) {
       setFormStep(Math.min(formStep, 0));
     }
-  }, [noCredentials, formStep, setFormStep]);
+  }, [credentialActivated, formStep, noCredentials, setFormStep]);
 
   const convertStringToDateTime = (indexingStart: string | null) => {
     return indexingStart ? new Date(indexingStart) : null;
@@ -232,12 +273,18 @@ export default function AddConnector({
   // Credential handler functions
   const refresh = () => {
     mutate(buildSimilarCredentialInfoURL(connector));
+    mutate(buildSimilarCredentialInfoURL(connector, true));
+    mutate(getConnectorProviderStatusUrl(connector));
   };
 
   const onDeleteCredential = async (credential: Credential<any | null>) => {
     const response = await deleteCredential(credential.id, true);
     if (response.ok) {
+      if (currentCredential?.id === credential.id) {
+        setCurrentCredential(null);
+      }
       toast.success("Credential deleted successfully!");
+      refresh();
     } else {
       const errorData = await response.json();
       toast.error(errorData.detail || errorData.message);
@@ -253,37 +300,6 @@ export default function AddConnector({
 
   const onSuccess = () => {
     router.push("/admin/indexing/status?message=connector-created");
-  };
-
-  const handleAuthorize = async () => {
-    // authorize button handler
-    // gets an auth url from the server and directs the user to it in a popup
-
-    if (!currentPageUrl) return;
-
-    setIsAuthorizing(true);
-    try {
-      const response = await prepareOAuthAuthorizationRequest(
-        connector,
-        currentPageUrl
-      );
-      if (response.url) {
-        setOauthUrl(response.url);
-        window.open(response.url, "_blank", "noopener,noreferrer");
-      } else {
-        toast.error("Failed to fetch OAuth URL");
-      }
-    } catch (error: unknown) {
-      // Narrow the type of error
-      if (error instanceof Error) {
-        toast.error(`Error: ${error.message}`);
-      } else {
-        // Handle non-standard errors
-        toast.error("An unknown error occurred");
-      }
-    } finally {
-      setIsAuthorizing(false);
-    }
   };
 
   return (
@@ -425,13 +441,9 @@ export default function AddConnector({
 
             // With credential
             if (credentialActivated && isSuccess && response) {
-              const credential =
-                currentCredential ||
-                liveGDriveCredential ||
-                liveGmailCredential;
               const linkCredentialResponse = await linkCredential(
                 response.id,
-                credential?.id!,
+                currentCredential?.id!,
                 name,
                 access_type,
                 groups,
@@ -526,123 +538,142 @@ export default function AddConnector({
           />
 
           {formStep == 0 && (
-            <CardSection>
-              <Text as="p" headingH3 className="pb-2">
-                Select a credential
-              </Text>
+            <div className="flex flex-col gap-4">
+              {supportsSharedConnectorAccounts && (
+                <OAuthConnectorAccountsSection
+                  sourceType={connector}
+                  selectedCredentialId={currentCredential?.id ?? null}
+                  onSelectCredential={(credential) => {
+                    setCurrentCredential(credential);
+                    if (credential) {
+                      setAllowCreate(true);
+                    }
+                  }}
+                  onRefreshCredentials={refresh}
+                  advancedSetupOpen={advancedSetupOpen}
+                  onToggleAdvancedSetup={() =>
+                    setAdvancedSetupOpen((currentValue) => !currentValue)
+                  }
+                />
+              )}
 
-              {connector == ValidSources.Gmail ? (
-                <GmailMain />
-              ) : (
-                <>
-                  <ModifyCredential
-                    showIfEmpty
-                    accessType={formikProps.values.access_type}
-                    defaultedCredential={currentCredential!}
-                    credentials={credentials}
-                    editableCredentials={editableCredentials}
-                    onDeleteCredential={onDeleteCredential}
-                    onSwitch={onSwap}
-                  />
-                  {!createCredentialFormToggle && (
-                    <div className="mt-6 flex gap-4">
-                      {/* Button to pop up a form to manually enter credentials */}
-                      <Button
-                        onClick={async () => {
-                          if (oauthDetails && oauthDetails.oauth_enabled) {
-                            if (oauthDetails.additional_kwargs.length > 0) {
-                              setCreateCredentialFormToggle(true);
-                            } else {
-                              const redirectUrl =
-                                await getConnectorOauthRedirectUrl(
-                                  connector,
-                                  {}
-                                );
-                              // if redirect is supported, just use it
-                              if (redirectUrl) {
-                                window.location.href = redirectUrl;
+              {(!supportsSharedConnectorAccounts || advancedSetupOpen) && (
+                <CardSection>
+                  <div className="flex flex-col gap-2">
+                    <Text as="p" headingH3>
+                      {supportsSharedConnectorAccounts
+                        ? "Advanced setup"
+                        : "Select a credential"}
+                    </Text>
+                    {supportsSharedConnectorAccounts && (
+                      <Text as="p" text03 mainUiBody>
+                        Use this path for service account JSON, custom OAuth app
+                        credentials, enterprise configuration, or other manual
+                        authentication methods.
+                      </Text>
+                    )}
+                  </div>
+
+                  {connector == ValidSources.Gmail ? (
+                    <GmailMain />
+                  ) : (
+                    <>
+                      <ModifyCredential
+                        showIfEmpty
+                        accessType={formikProps.values.access_type}
+                        defaultedCredential={currentCredential!}
+                        credentials={credentials}
+                        editableCredentials={editableCredentials}
+                        onDeleteCredential={onDeleteCredential}
+                        onSwitch={onSwap}
+                      />
+                      {!createCredentialFormToggle && (
+                        <div className="mt-6 flex gap-4">
+                          <Button
+                            onClick={async () => {
+                              if (supportsSharedConnectorAccounts) {
+                                setCreateCredentialFormToggle(true);
+                                return;
+                              }
+
+                              if (oauthDetails && oauthDetails.oauth_enabled) {
+                                if (oauthDetails.additional_kwargs.length > 0) {
+                                  setCreateCredentialFormToggle(true);
+                                } else {
+                                  const redirectUrl =
+                                    await getConnectorOauthRedirectUrl(
+                                      connector,
+                                      {}
+                                    );
+                                  if (redirectUrl) {
+                                    window.location.href = redirectUrl;
+                                  } else {
+                                    setCreateCredentialFormToggle(
+                                      (createConnectorToggle) =>
+                                        !createConnectorToggle
+                                    );
+                                  }
+                                }
                               } else {
                                 setCreateCredentialFormToggle(
-                                  (createConnectorToggle) =>
-                                    !createConnectorToggle
+                                  (createConnectorToggle) => !createConnectorToggle
                                 );
                               }
-                            }
-                          } else {
-                            setCreateCredentialFormToggle(
-                              (createConnectorToggle) => !createConnectorToggle
-                            );
-                          }
-                        }}
-                      >
-                        Create New
-                      </Button>
-                      {/* Button to sign in via OAuth */}
-                      {oauthSupportedSources.includes(connector) &&
-                        (NEXT_PUBLIC_CLOUD_ENABLED || NEXT_PUBLIC_TEST_ENV) && (
-                          <Disabled disabled={isAuthorizing}>
-                            <Button
-                              variant="action"
-                              onClick={handleAuthorize}
-                              hidden={!isAuthorizeVisible}
-                            >
-                              {isAuthorizing
-                                ? "Authorizing..."
-                                : `Authorize with ${getSourceDisplayName(
-                                    connector
-                                  )}`}
-                            </Button>
-                          </Disabled>
-                        )}
-                    </div>
-                  )}
+                            }}
+                          >
+                            Create New
+                          </Button>
+                        </div>
+                      )}
 
-                  {createCredentialFormToggle && (
-                    <Modal
-                      open
-                      onOpenChange={() => setCreateCredentialFormToggle(false)}
-                    >
-                      <Modal.Content>
-                        <Modal.Header
-                          icon={SvgKey}
-                          title={`Create a ${getSourceDisplayName(
-                            connector
-                          )} credential`}
-                          onClose={() => setCreateCredentialFormToggle(false)}
-                        />
-                        <Modal.Body>
-                          {oauthDetailsLoading ? (
-                            <Spinner />
-                          ) : (
-                            <>
-                              {oauthDetails && oauthDetails.oauth_enabled ? (
-                                <CreateStdOAuthCredential
-                                  sourceType={connector}
-                                  additionalFields={
-                                    oauthDetails.additional_kwargs
-                                  }
-                                />
+                      {createCredentialFormToggle && (
+                        <Modal
+                          open
+                          onOpenChange={() => setCreateCredentialFormToggle(false)}
+                        >
+                          <Modal.Content>
+                            <Modal.Header
+                              icon={SvgKey}
+                              title={`Create a ${getSourceDisplayName(
+                                connector
+                              )} credential`}
+                              onClose={() => setCreateCredentialFormToggle(false)}
+                            />
+                            <Modal.Body>
+                              {oauthDetailsLoading ? (
+                                <Spinner />
                               ) : (
-                                <CreateCredential
-                                  close
-                                  refresh={refresh}
-                                  sourceType={connector}
-                                  accessType={formikProps.values.access_type}
-                                  onSwitch={onSwap}
-                                  onClose={() =>
-                                    setCreateCredentialFormToggle(false)
-                                  }
-                                />
+                                <>
+                                  {oauthDetails && oauthDetails.oauth_enabled ? (
+                                    <CreateStdOAuthCredential
+                                      sourceType={connector}
+                                      additionalFields={
+                                        oauthDetails.additional_kwargs
+                                      }
+                                    />
+                                  ) : (
+                                    <CreateCredential
+                                      close
+                                      refresh={refresh}
+                                      sourceType={connector}
+                                      accessType={formikProps.values.access_type}
+                                      onSwitch={onSwap}
+                                      onClose={() =>
+                                        setCreateCredentialFormToggle(false)
+                                      }
+                                    />
+                                  )}
+                                </>
                               )}
-                            </>
-                          )}
-                        </Modal.Body>
-                      </Modal.Content>
-                    </Modal>
+                            </Modal.Body>
+                          </Modal.Content>
+                        </Modal>
+                      )}
+                    </>
                   )}
-                </>
+                </CardSection>
               )}
-            </CardSection>
+            </div>
           )}
 
           {formStep == 1 && (
@@ -651,12 +682,7 @@ export default function AddConnector({
                 values={formikProps.values}
                 config={configuration}
                 connector={connector}
-                currentCredential={
-                  currentCredential ||
-                  liveGDriveCredential ||
-                  liveGmailCredential ||
-                  null
-                }
+                currentCredential={currentCredential}
               />
               <ConnectorDocsLink sourceType={connector} />
             </CardSection>

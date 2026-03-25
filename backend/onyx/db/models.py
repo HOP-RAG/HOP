@@ -62,6 +62,8 @@ from onyx.db.enums import (
     AccessType,
     ArtifactType,
     BuildSessionStatus,
+    ConnectorAccountStatus,
+    ConnectorCredentialType,
     EmbeddingPrecision,
     HierarchyNodeType,
     HookFailStrategy,
@@ -410,6 +412,11 @@ class User(SQLAlchemyBaseUserTableUUID, Base):
     )
     oauth_user_tokens: Mapped[list["OAuthUserToken"]] = relationship(
         "OAuthUserToken",
+        back_populates="user",
+        cascade="all, delete-orphan",
+    )
+    connector_accounts: Mapped[list["ConnectorAccount"]] = relationship(
+        "ConnectorAccount",
         back_populates="user",
         cascade="all, delete-orphan",
     )
@@ -1946,8 +1953,129 @@ class Credential(Base):
             passive_deletes=True,
         )
     )
+    connector_accounts: Mapped[list["ConnectorAccount"]] = relationship(
+        "ConnectorAccount",
+        back_populates="credential",
+    )
 
     user: Mapped[User | None] = relationship("User", back_populates="credentials")
+
+
+class ConnectorAccount(Base):
+    __tablename__ = "connector_account"
+
+    id: Mapped[int] = mapped_column(Integer, primary_key=True)
+    source: Mapped[DocumentSource] = mapped_column(
+        Enum(DocumentSource, native_enum=False), nullable=False, index=True
+    )
+    user_id: Mapped[UUID | None] = mapped_column(
+        PGUUID(as_uuid=True),
+        ForeignKey("user.id", ondelete="CASCADE"),
+        nullable=True,
+        index=True,
+    )
+    credential_id: Mapped[int | None] = mapped_column(
+        ForeignKey("credential.id", ondelete="SET NULL"),
+        nullable=True,
+        unique=True,
+        index=True,
+    )
+    name: Mapped[str | None] = mapped_column(String, nullable=True)
+    status: Mapped[ConnectorAccountStatus] = mapped_column(
+        Enum(ConnectorAccountStatus, native_enum=False),
+        nullable=False,
+        default=ConnectorAccountStatus.CONNECTING,
+        server_default=ConnectorAccountStatus.CONNECTING.value,
+    )
+    credential_type: Mapped[ConnectorCredentialType] = mapped_column(
+        Enum(ConnectorCredentialType, native_enum=False),
+        nullable=False,
+        default=ConnectorCredentialType.CUSTOM,
+        server_default=ConnectorCredentialType.CUSTOM.value,
+    )
+    external_account_id: Mapped[str | None] = mapped_column(String, nullable=True)
+    external_account_email: Mapped[str | None] = mapped_column(
+        String, nullable=True
+    )
+    account_metadata: Mapped[dict[str, Any]] = mapped_column(
+        postgresql.JSONB(), nullable=False, default=dict, server_default="{}"
+    )
+    settings: Mapped[dict[str, Any]] = mapped_column(
+        postgresql.JSONB(), nullable=False, default=dict, server_default="{}"
+    )
+    last_error: Mapped[str | None] = mapped_column(Text, nullable=True)
+    last_connected_at: Mapped[datetime.datetime | None] = mapped_column(
+        DateTime(timezone=True), nullable=True
+    )
+    last_sync_at: Mapped[datetime.datetime | None] = mapped_column(
+        DateTime(timezone=True), nullable=True
+    )
+    last_sync_status: Mapped[SyncStatus | None] = mapped_column(
+        Enum(SyncStatus, native_enum=False), nullable=True
+    )
+    disconnected_at: Mapped[datetime.datetime | None] = mapped_column(
+        DateTime(timezone=True), nullable=True
+    )
+    created_at: Mapped[datetime.datetime] = mapped_column(
+        DateTime(timezone=True), server_default=func.now(), nullable=False
+    )
+    updated_at: Mapped[datetime.datetime] = mapped_column(
+        DateTime(timezone=True),
+        server_default=func.now(),
+        onupdate=func.now(),
+        nullable=False,
+    )
+
+    user: Mapped["User | None"] = relationship("User", back_populates="connector_accounts")
+    credential: Mapped["Credential | None"] = relationship(
+        "Credential", back_populates="connector_accounts"
+    )
+    sync_jobs: Mapped[list["ConnectorSyncJob"]] = relationship(
+        "ConnectorSyncJob",
+        back_populates="connector_account",
+        cascade="all, delete-orphan",
+        order_by="desc(ConnectorSyncJob.id)",
+    )
+
+    __table_args__ = (
+        Index("ix_connector_account_source_status", "source", "status"),
+    )
+
+
+class ConnectorSyncJob(Base):
+    __tablename__ = "connector_sync_job"
+
+    id: Mapped[int] = mapped_column(Integer, primary_key=True)
+    connector_account_id: Mapped[int] = mapped_column(
+        ForeignKey("connector_account.id", ondelete="CASCADE"),
+        nullable=False,
+        index=True,
+    )
+    status: Mapped[SyncStatus] = mapped_column(
+        Enum(SyncStatus, native_enum=False),
+        nullable=False,
+        default=SyncStatus.IN_PROGRESS,
+        server_default=SyncStatus.IN_PROGRESS.value,
+    )
+    trigger_type: Mapped[str] = mapped_column(String, nullable=False)
+    metadata: Mapped[dict[str, Any]] = mapped_column(
+        postgresql.JSONB(), nullable=False, default=dict, server_default="{}"
+    )
+    message: Mapped[str | None] = mapped_column(Text, nullable=True)
+    error_message: Mapped[str | None] = mapped_column(Text, nullable=True)
+    created_at: Mapped[datetime.datetime] = mapped_column(
+        DateTime(timezone=True), server_default=func.now(), nullable=False
+    )
+    started_at: Mapped[datetime.datetime | None] = mapped_column(
+        DateTime(timezone=True), nullable=True
+    )
+    finished_at: Mapped[datetime.datetime | None] = mapped_column(
+        DateTime(timezone=True), nullable=True
+    )
+
+    connector_account: Mapped["ConnectorAccount"] = relationship(
+        "ConnectorAccount", back_populates="sync_jobs"
+    )
 
 
 class FederatedConnector(Base):
