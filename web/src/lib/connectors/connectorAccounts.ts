@@ -23,6 +23,11 @@ export type ConnectorCredentialType =
   | "api_key"
   | "custom";
 
+export type ConnectorAuthMode =
+  | "platform_oauth"
+  | "customer_oauth"
+  | "service_account_json";
+
 export interface ConnectorAccountSnapshot {
   id: number;
   source: ValidSources;
@@ -47,12 +52,18 @@ export interface ConnectorAccountSnapshot {
 export interface ConnectorProviderStatusResponse {
   source: ValidSources;
   oauth_enabled: boolean;
+  available_auth_modes: ConnectorAuthMode[];
   additional_kwargs: OAuthAdditionalKwargDescription[];
   accounts: ConnectorAccountSnapshot[];
 }
 
 interface OAuthStartResponse {
   url: string;
+}
+
+interface CustomOAuthClientConfig {
+  client_id: string;
+  client_secret: string;
 }
 
 function getErrorMessage(errorData: any, fallback: string) {
@@ -101,6 +112,34 @@ export async function startConnectorOAuth(
   const data = await parseJsonResponse<OAuthStartResponse>(
     response,
     `Failed to start ${sourceType} OAuth flow.`
+  );
+  return data.url;
+}
+
+export async function startConnectorOAuthWithCustomClient(
+  sourceType: ValidSources,
+  oauthClient: CustomOAuthClientConfig,
+  additionalKwargs: Record<string, string> = {},
+  desiredReturnUrl: string = window.location.href
+): Promise<string> {
+  const response = await fetch(
+    `/api/manage/connectors/${sourceType}/oauth/start`,
+    {
+      method: "POST",
+      headers: {
+        "Content-Type": "application/json",
+      },
+      body: JSON.stringify({
+        desired_return_url: desiredReturnUrl,
+        additional_kwargs: additionalKwargs,
+        auth_mode: "customer_oauth",
+        oauth_client: oauthClient,
+      }),
+    }
+  );
+  const data = await parseJsonResponse<OAuthStartResponse>(
+    response,
+    `Failed to start ${sourceType} customer OAuth flow.`
   );
   return data.url;
 }

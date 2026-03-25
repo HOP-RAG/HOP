@@ -40,7 +40,10 @@ import { Formik } from "formik";
 import NavigationRow from "@/app/admin/connectors/[connector]/NavigationRow";
 import { useRouter, useSearchParams } from "next/navigation";
 import CardSection from "@/components/admin/CardSection";
-import { getConnectorOauthRedirectUrl, useOAuthDetails } from "@/lib/connectors/oauth";
+import {
+  getConnectorOauthRedirectUrl,
+  useOAuthDetails,
+} from "@/lib/connectors/oauth";
 import { CreateStdOAuthCredential } from "@/components/credentials/actions/CreateStdOAuthCredential";
 import { Spinner } from "@/components/Spinner";
 import { Button } from "@opal/components";
@@ -50,6 +53,12 @@ import Text from "@/refresh-components/texts/Text";
 import { SvgKey, SvgAlertCircle } from "@opal/icons";
 import SimpleTooltip from "@/refresh-components/SimpleTooltip";
 import Link from "next/link";
+import { useAppLanguage } from "@/providers/AppLanguageProvider";
+import {
+  getAdvancedCreateButtonLabel,
+  getAdvancedSetupDescription,
+  getManualCredentialModalTitle,
+} from "@/lib/connectors/authUi";
 
 export interface AdvancedConfig {
   refreshFreq: number;
@@ -119,6 +128,7 @@ export default function AddConnector({
 }: {
   connector: ConfigurableSources;
 }) {
+  const { t } = useAppLanguage();
   const router = useRouter();
   const searchParams = useSearchParams();
 
@@ -144,7 +154,8 @@ export default function AddConnector({
 
   const { data: oauthDetails, isLoading: oauthDetailsLoading } =
     useOAuthDetails(connector);
-  const { data: connectorProviderStatus } = useConnectorProviderStatus(connector);
+  const { data: connectorProviderStatus } =
+    useConnectorProviderStatus(connector);
 
   // Get credential template and configuration
   const credentialTemplate = credentialTemplates[connector];
@@ -171,8 +182,11 @@ export default function AddConnector({
   const connectorAccountId = searchParams?.get("connectorAccountId");
   const supportsSharedConnectorAccounts = Boolean(
     connectorProviderStatus?.oauth_enabled ||
+      (connectorProviderStatus?.available_auth_modes.length ?? 0) > 0 ||
       (connectorProviderStatus?.accounts.length ?? 0) > 0
   );
+  const advancedSetupUsesModal =
+    connector === ValidSources.GoogleDrive && supportsSharedConnectorAccounts;
   const credentialActivated = currentCredential;
 
   useEffect(() => {
@@ -184,7 +198,8 @@ export default function AddConnector({
       connectorAccountCredentialId != null
         ? credentials.find(
             (credential) =>
-              credential.id === Number.parseInt(connectorAccountCredentialId, 10)
+              credential.id ===
+              Number.parseInt(connectorAccountCredentialId, 10)
           )
         : null;
 
@@ -550,26 +565,34 @@ export default function AddConnector({
                     }
                   }}
                   onRefreshCredentials={refresh}
-                  advancedSetupOpen={advancedSetupOpen}
-                  onToggleAdvancedSetup={() =>
-                    setAdvancedSetupOpen((currentValue) => !currentValue)
+                  advancedSetupOpen={
+                    advancedSetupUsesModal
+                      ? createCredentialFormToggle
+                      : advancedSetupOpen
                   }
+                  onToggleAdvancedSetup={() => {
+                    if (advancedSetupUsesModal) {
+                      setCreateCredentialFormToggle(true);
+                      return;
+                    }
+
+                    setAdvancedSetupOpen((currentValue) => !currentValue);
+                  }}
                 />
               )}
 
-              {(!supportsSharedConnectorAccounts || advancedSetupOpen) && (
+              {(!supportsSharedConnectorAccounts ||
+                (advancedSetupOpen && !advancedSetupUsesModal)) && (
                 <CardSection>
                   <div className="flex flex-col gap-2">
                     <Text as="p" headingH3>
                       {supportsSharedConnectorAccounts
-                        ? "Advanced setup"
-                        : "Select a credential"}
+                        ? t("connectors.advanced.title")
+                        : t("connectors.advanced.selectCredential")}
                     </Text>
                     {supportsSharedConnectorAccounts && (
                       <Text as="p" text03 mainUiBody>
-                        Use this path for service account JSON, custom OAuth app
-                        credentials, enterprise configuration, or other manual
-                        authentication methods.
+                        {getAdvancedSetupDescription(connector, t)}
                       </Text>
                     )}
                   </div>
@@ -616,12 +639,13 @@ export default function AddConnector({
                                 }
                               } else {
                                 setCreateCredentialFormToggle(
-                                  (createConnectorToggle) => !createConnectorToggle
+                                  (createConnectorToggle) =>
+                                    !createConnectorToggle
                                 );
                               }
                             }}
                           >
-                            Create New
+                            {getAdvancedCreateButtonLabel(connector, t)}
                           </Button>
                         </div>
                       )}
@@ -629,22 +653,29 @@ export default function AddConnector({
                       {createCredentialFormToggle && (
                         <Modal
                           open
-                          onOpenChange={() => setCreateCredentialFormToggle(false)}
+                          onOpenChange={() =>
+                            setCreateCredentialFormToggle(false)
+                          }
                         >
                           <Modal.Content>
                             <Modal.Header
                               icon={SvgKey}
-                              title={`Create a ${getSourceDisplayName(
-                                connector
-                              )} credential`}
-                              onClose={() => setCreateCredentialFormToggle(false)}
+                              title={getManualCredentialModalTitle(
+                                connector,
+                                getSourceDisplayName(connector) || connector,
+                                t
+                              )}
+                              onClose={() =>
+                                setCreateCredentialFormToggle(false)
+                              }
                             />
                             <Modal.Body>
                               {oauthDetailsLoading ? (
                                 <Spinner />
                               ) : (
                                 <>
-                                  {oauthDetails && oauthDetails.oauth_enabled ? (
+                                  {oauthDetails &&
+                                  oauthDetails.oauth_enabled ? (
                                     <CreateStdOAuthCredential
                                       sourceType={connector}
                                       additionalFields={
@@ -656,7 +687,9 @@ export default function AddConnector({
                                       close
                                       refresh={refresh}
                                       sourceType={connector}
-                                      accessType={formikProps.values.access_type}
+                                      accessType={
+                                        formikProps.values.access_type
+                                      }
                                       onSwitch={onSwap}
                                       onClose={() =>
                                         setCreateCredentialFormToggle(false)

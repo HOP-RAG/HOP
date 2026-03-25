@@ -94,6 +94,64 @@ const translations = {
     "admin.routes.scim.sidebar": "SCIM",
     "admin.routes.debug.title": "Debug Logs",
     "admin.routes.debug.sidebar": "Debug Logs",
+    "connectors.auth.sectionDescription.default":
+      "OAuth is the default path here. Connect your account, approve access, and then continue with connector-specific setup like folder or source selection.",
+    "connectors.auth.sectionDescription.google":
+      "Use the platform-managed Google Drive OAuth flow first. Sign in, approve Drive access, and ACTIVA will save the connection for this connector.",
+    "connectors.auth.title": "Connect {{source}}",
+    "connectors.auth.existingConnections": "Existing connections",
+    "connectors.auth.loadError":
+      "We could not load the shared connection status right now. You can still continue with advanced setup below.",
+    "connectors.auth.oauthUnavailable":
+      "OAuth is not available for this connector yet. You can use the advanced setup path below.",
+    "connectors.auth.noLinkedConnectors":
+      "Connect first, then continue to choose folders, spaces, or other source-specific options.",
+    "connectors.auth.linkedConnectors":
+      "{{count}} connector(s) already use this connection.",
+    "connectors.auth.lastSync": "Last sync: {{time}} ({{status}})",
+    "connectors.auth.buttons.connectWithGoogle": "Connect with Google Drive",
+    "connectors.auth.buttons.connectAnotherGoogle":
+      "Connect another Google Drive account",
+    "connectors.auth.buttons.useCustomCredentials": "Use custom credentials",
+    "connectors.auth.buttons.advancedOptions": "Advanced options",
+    "connectors.auth.buttons.useOwnCredentials": "Use your own credentials",
+    "connectors.auth.buttons.uploadJsonManually": "Upload JSON manually",
+    "connectors.auth.buttons.hideManualSetup": "Hide manual setup",
+    "connectors.auth.buttons.useConnection": "Use connection",
+    "connectors.auth.buttons.selected": "Selected",
+    "connectors.auth.buttons.syncNow": "Sync now",
+    "connectors.auth.buttons.reconnect": "Reconnect",
+    "connectors.auth.buttons.disconnect": "Disconnect",
+    "connectors.auth.errors.required": "Required",
+    "connectors.auth.errors.connect": "Failed to connect {{source}}.",
+    "connectors.auth.errors.reconnect": "Failed to reconnect {{source}}.",
+    "connectors.auth.errors.disconnect": "Failed to disconnect {{source}}.",
+    "connectors.auth.errors.sync": "Failed to sync {{source}}.",
+    "connectors.auth.status.connected": "Connected",
+    "connectors.auth.status.syncing": "Syncing",
+    "connectors.auth.status.expired": "Expired",
+    "connectors.auth.status.needsReconnect": "Reconnect required",
+    "connectors.auth.status.connecting": "Connecting",
+    "connectors.auth.status.disconnected": "Disconnected",
+    "connectors.auth.status.error": "Error",
+    "connectors.auth.status.notConnected": "Not connected",
+    "connectors.auth.credentialType.platformOauth": "Platform OAuth",
+    "connectors.auth.credentialType.customerOauth": "Customer-managed OAuth",
+    "connectors.auth.credentialType.oauth": "OAuth",
+    "connectors.auth.credentialType.serviceAccount": "Service account",
+    "connectors.auth.credentialType.serviceAccountJson": "Service account JSON",
+    "connectors.auth.credentialType.manualOauthJson": "Manual OAuth JSON",
+    "connectors.auth.credentialType.apiKey": "API key",
+    "connectors.auth.credentialType.custom": "Custom",
+    "connectors.advanced.title": "Advanced setup",
+    "connectors.advanced.selectCredential": "Select a credential",
+    "connectors.advanced.description.default":
+      "Use this path for service account JSON, custom OAuth app credentials, enterprise configuration, or other manual authentication methods.",
+    "connectors.advanced.description.google":
+      "Use this advanced path if you want to manage your own Google OAuth client, or fall back to service-account and legacy JSON setup.",
+    "connectors.advanced.modalTitle.manualCredential":
+      "Use your own {{source}} credentials",
+    "connectors.advanced.buttons.createNew": "Create New",
     "users.page.description":
       "Manage people, access requests, and team membership with a cleaner operating view.",
     "users.page.invite": "Invite Users",
@@ -343,6 +401,67 @@ const translations = {
     "admin.routes.scim.sidebar": "SCIM",
     "admin.routes.debug.title": "Logs de depuracion",
     "admin.routes.debug.sidebar": "Logs de depuracion",
+    "connectors.auth.sectionDescription.default":
+      "OAuth es la ruta predeterminada aqui. Conecta tu cuenta, aprueba el acceso y luego continua con la configuracion especifica del conector, como carpetas o fuentes.",
+    "connectors.auth.sectionDescription.google":
+      "Usa primero el flujo OAuth de Google Drive administrado por la plataforma. Inicia sesion, aprueba el acceso a Drive y ACTIVA guardara la conexion para este conector.",
+    "connectors.auth.title": "Conecta {{source}}",
+    "connectors.auth.existingConnections": "Conexiones existentes",
+    "connectors.auth.loadError":
+      "No pudimos cargar el estado compartido de la conexion ahora mismo. Aun puedes continuar con la configuracion avanzada abajo.",
+    "connectors.auth.oauthUnavailable":
+      "OAuth todavia no esta disponible para este conector. Puedes usar la ruta de configuracion avanzada de abajo.",
+    "connectors.auth.noLinkedConnectors":
+      "Conecta primero y despues continua para elegir carpetas, espacios u otras opciones especificas de la fuente.",
+    "connectors.auth.linkedConnectors":
+      "{{count}} conector(es) ya usan esta conexion.",
+    "connectors.auth.lastSync": "Ultima sincronizacion: {{time}} ({{status}})",
+    "connectors.auth.buttons.connectWithGoogle": "Conectar con Google Drive",
+    "connectors.auth.buttons.connectAnotherGoogle":
+      "Conectar otra cuenta de Google Drive",
+    "connectors.auth.buttons.useCustomCredentials": "Usar credenciales custom",
+    "connectors.auth.buttons.advancedOptions": "Opciones avanzadas",
+    "connectors.auth.buttons.useOwnCredentials":
+      "Usar tus propias credenciales",
+    "connectors.auth.buttons.uploadJsonManually": "Subir JSON manualmente",
+    "connectors.auth.buttons.hideManualSetup": "Ocultar configuracion manual",
+    "connectors.auth.buttons.useConnection": "Usar conexion",
+    "connectors.auth.buttons.selected": "Seleccionada",
+    "connectors.auth.buttons.syncNow": "Sincronizar ahora",
+    "connectors.auth.buttons.reconnect": "Reconectar",
+    "connectors.auth.buttons.disconnect": "Desconectar",
+    "connectors.auth.errors.required": "Obligatorio",
+    "connectors.auth.errors.connect": "No se pudo conectar {{source}}.",
+    "connectors.auth.errors.reconnect": "No se pudo reconectar {{source}}.",
+    "connectors.auth.errors.disconnect": "No se pudo desconectar {{source}}.",
+    "connectors.auth.errors.sync": "No se pudo sincronizar {{source}}.",
+    "connectors.auth.status.connected": "Conectado",
+    "connectors.auth.status.syncing": "Sincronizando",
+    "connectors.auth.status.expired": "Expirado",
+    "connectors.auth.status.needsReconnect": "Requiere reconexion",
+    "connectors.auth.status.connecting": "Conectando",
+    "connectors.auth.status.disconnected": "Desconectado",
+    "connectors.auth.status.error": "Error",
+    "connectors.auth.status.notConnected": "No conectado",
+    "connectors.auth.credentialType.platformOauth": "OAuth de plataforma",
+    "connectors.auth.credentialType.customerOauth":
+      "OAuth gestionado por el cliente",
+    "connectors.auth.credentialType.oauth": "OAuth",
+    "connectors.auth.credentialType.serviceAccount": "Cuenta de servicio",
+    "connectors.auth.credentialType.serviceAccountJson":
+      "JSON de cuenta de servicio",
+    "connectors.auth.credentialType.manualOauthJson": "JSON OAuth manual",
+    "connectors.auth.credentialType.apiKey": "API key",
+    "connectors.auth.credentialType.custom": "Custom",
+    "connectors.advanced.title": "Configuracion avanzada",
+    "connectors.advanced.selectCredential": "Selecciona una credencial",
+    "connectors.advanced.description.default":
+      "Usa esta ruta para JSON de cuenta de servicio, credenciales de app OAuth custom, configuracion enterprise u otros metodos manuales de autenticacion.",
+    "connectors.advanced.description.google":
+      "Usa esta ruta avanzada si quieres gestionar tu propio cliente OAuth de Google, o si necesitas el fallback por cuenta de servicio o JSON legacy.",
+    "connectors.advanced.modalTitle.manualCredential":
+      "Usa tus propias credenciales de {{source}}",
+    "connectors.advanced.buttons.createNew": "Crear nueva",
     "users.page.description":
       "Gestiona personas, solicitudes de acceso y membresias del equipo con una vista operativa mas clara.",
     "users.page.invite": "Invitar usuarios",

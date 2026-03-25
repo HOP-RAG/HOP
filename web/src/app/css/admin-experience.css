@@ -1,34 +1,34 @@
 :is(.admin-experience, body[data-experience="admin"]) {
-  --admin-bg-top: rgba(129, 254, 254, 0.24);
-  --admin-bg-spot: rgba(51, 108, 250, 0.14);
-  --admin-surface: rgba(250, 251, 251, 0.82);
-  --admin-surface-strong: rgba(255, 255, 255, 0.9);
-  --admin-surface-muted: rgba(238, 244, 251, 0.92);
-  --admin-border-soft: rgba(67, 106, 201, 0.14);
-  --admin-border-strong: rgba(67, 106, 201, 0.24);
-  --admin-shadow: 0 28px 80px -44px rgba(33, 64, 120, 0.42);
+  --admin-bg-top: rgba(90, 140, 255, 0.12);
+  --admin-bg-spot: rgba(31, 79, 209, 0.12);
+  --admin-surface: #f7f9fc;
+  --admin-surface-strong: #ffffff;
+  --admin-surface-muted: #eef4fb;
+  --admin-border-soft: rgba(24, 38, 66, 0.1);
+  --admin-border-strong: rgba(51, 108, 250, 0.24);
+  --admin-shadow: 0 20px 48px -40px rgba(24, 38, 66, 0.22);
 
-  --text-05: #0d1b32;
-  --text-04: rgba(16, 24, 40, 0.88);
-  --text-03: rgba(35, 55, 89, 0.7);
-  --text-02: rgba(35, 55, 89, 0.52);
-  --text-01: rgba(35, 55, 89, 0.3);
+  --text-05: var(--alpha-grey-100-90);
+  --text-04: var(--alpha-grey-100-75);
+  --text-03: var(--alpha-grey-100-55);
+  --text-02: var(--alpha-grey-100-45);
+  --text-01: var(--alpha-grey-100-20);
 
   --background-neutral-00: var(--admin-surface-strong);
-  --background-neutral-01: rgba(250, 251, 251, 0.94);
-  --background-neutral-02: rgba(238, 244, 251, 0.92);
-  --background-neutral-03: rgba(223, 233, 246, 0.9);
-  --background-neutral-04: rgba(200, 214, 235, 0.88);
-  --background-tint-00: rgba(255, 255, 255, 0.76);
+  --background-neutral-01: #f6f8fb;
+  --background-neutral-02: #edf2f8;
+  --background-neutral-03: #dfe7f1;
+  --background-neutral-04: #ccd8e8;
+  --background-tint-00: var(--admin-surface-strong);
   --background-tint-01: var(--admin-surface);
   --background-tint-02: var(--admin-surface-muted);
-  --background-tint-03: rgba(217, 229, 246, 0.94);
-  --background-tint-04: rgba(190, 212, 245, 0.96);
+  --background-tint-03: #dce8f9;
+  --background-tint-04: #c9dbf5;
 
   --border-01: var(--admin-border-soft);
-  --border-02: rgba(67, 106, 201, 0.2);
+  --border-02: rgba(24, 38, 66, 0.16);
   --border-03: var(--admin-border-strong);
-  --border-04: rgba(67, 106, 201, 0.38);
+  --border-04: rgba(51, 108, 250, 0.38);
   --border-05: #1f4fd1;
 
   --theme-primary-06: #1f4fd1;
@@ -50,14 +50,41 @@
 
 .dark .admin-experience,
 .dark body[data-experience="admin"] {
-  --admin-bg-top: rgba(129, 254, 254, 0.12);
-  --admin-bg-spot: rgba(51, 108, 250, 0.26);
-  --admin-surface: rgba(8, 14, 24, 0.88);
-  --admin-surface-strong: rgba(10, 16, 28, 0.94);
-  --admin-surface-muted: rgba(17, 27, 43, 0.92);
-  --admin-border-soft: rgba(129, 254, 254, 0.14);
-  --admin-border-strong: rgba(67, 106, 201, 0.32);
-  --admin-shadow: 0 28px 80px -44px rgba(0, 0, 0, 0.6);
+  --admin-bg-top: rgba(51, 108, 250, 0.14);
+  --admin-bg-spot: rgba(31, 79, 209, 0.2);
+  --admin-surface: #171b21;
+  --admin-surface-strong: #0c0f13;
+  --admin-surface-muted: #20262f;
+  --admin-border-soft: rgba(255, 255, 255, 0.1);
+  --admin-border-strong: rgba(90, 140, 255, 0.3);
+  --admin-shadow: 0 22px 50px -42px rgba(0, 0, 0, 0.58);
+
+  --text-05: var(--alpha-grey-00-95);
+  --text-04: var(--alpha-grey-00-85);
+  --text-03: var(--alpha-grey-00-60);
+  --text-02: var(--alpha-grey-00-45);
+  --text-01: var(--alpha-grey-00-20);
+
+  --background-neutral-00: var(--admin-surface-strong);
+  --background-neutral-01: #161a20;
+  --background-neutral-02: #1d232c;
+  --background-neutral-03: #252d39;
+  --background-neutral-04: #303a49;
+  --background-tint-00: var(--admin-surface-strong);
+  --background-tint-01: var(--admin-surface);
+  --background-tint-02: var(--admin-surface-muted);
+  --background-tint-03: #263041;
+  --background-tint-04: #324057;
+
+  --border-01: var(--admin-border-soft);
+  --border-02: rgba(255, 255, 255, 0.15);
+  --border-03: var(--admin-border-strong);
+  --border-04: rgba(90, 140, 255, 0.42);
+  --border-05: #5a8cff;
+
+  --shadow-01: rgba(0, 0, 0, 0.24);
+  --shadow-02: rgba(0, 0, 0, 0.4);
+  --shadow-03: rgba(0, 0, 0, 0.56);
 }
 
 .admin-experience {
@@ -66,9 +93,9 @@
   background: radial-gradient(
       circle at 12% 0%,
       var(--admin-bg-top),
-      transparent 30%
+      transparent 34%
     ),
-    radial-gradient(circle at 88% 12%, var(--admin-bg-spot), transparent 24%),
+    radial-gradient(circle at 88% 8%, var(--admin-bg-spot), transparent 28%),
     linear-gradient(180deg, #fafbfb 0%, #eef4fb 100%);
 }
 
@@ -76,88 +103,74 @@
   background: radial-gradient(
       circle at 12% 0%,
       var(--admin-bg-top),
-      transparent 30%
+      transparent 34%
     ),
-    radial-gradient(circle at 88% 12%, var(--admin-bg-spot), transparent 24%),
-    linear-gradient(180deg, #050b14 0%, #08101c 100%);
+    radial-gradient(circle at 88% 8%, var(--admin-bg-spot), transparent 28%),
+    linear-gradient(180deg, #161a20 0%, #0c0f13 100%);
 }
 
 .admin-experience .admin-main-container {
-  background: linear-gradient(
-      180deg,
-      rgba(250, 251, 251, 0.24) 0%,
-      transparent 7rem
-    ),
-    transparent;
+  background: transparent;
 }
 
 :is(.admin-experience, body[data-experience="admin"]) .sidebar-shell {
   border-right: 1px solid var(--border-01);
-  background: linear-gradient(
-      180deg,
-      rgba(255, 255, 255, 0.26),
-      transparent 7rem
-    ),
-    var(--background-tint-01);
-  backdrop-filter: blur(20px);
-  box-shadow: 18px 0 48px -42px rgba(33, 64, 120, 0.34);
+  background: var(--background-tint-01);
+  box-shadow: none;
 }
 
 :is(.admin-experience, body[data-experience="admin"]) .settings-layout-header {
   margin-top: 1rem;
-  border: 1px solid var(--border-01);
-  border-radius: 1.5rem;
-  background: rgba(250, 251, 251, 0.72);
-  backdrop-filter: blur(18px);
-  box-shadow: var(--admin-shadow);
+  border: none;
+  border-radius: 0;
+  background: transparent;
+  box-shadow: none;
 }
 
 :is(.admin-experience, body[data-experience="admin"]) .settings-layout-body {
   gap: 1.5rem;
-  padding-top: 1.25rem;
+  padding-top: 0.75rem;
 }
 
 :is(.admin-experience, body[data-experience="admin"])
   .card[data-variant="primary"] {
   border-color: var(--border-01);
-  background: var(--background-tint-00);
-  box-shadow: var(--admin-shadow);
-  backdrop-filter: blur(18px);
+  background: var(--background-neutral-00);
+  box-shadow: none;
 }
 
 :is(.admin-experience, body[data-experience="admin"])
   .card[data-variant="secondary"] {
   border-color: var(--border-01);
-  background: rgba(255, 255, 255, 0.32);
+  background: var(--background-neutral-01);
 }
 
 :is(.admin-experience, body[data-experience="admin"]) .button-main-primary {
-  background: linear-gradient(135deg, var(--theme-primary-05), #5a8cff);
-  box-shadow: 0 18px 36px -24px rgba(51, 108, 250, 0.72);
+  background: var(--theme-primary-05);
+  box-shadow: none;
   transition:
     transform 0.18s ease,
-    box-shadow 0.18s ease,
-    filter 0.18s ease;
+    background-color 0.18s ease,
+    border-color 0.18s ease;
 }
 
 :is(.admin-experience, body[data-experience="admin"])
   .button-main-primary:hover {
   transform: translateY(-1px);
-  filter: saturate(1.05);
+  background: var(--theme-primary-04);
 }
 
 :is(.admin-experience, body[data-experience="admin"]) .button-main-secondary,
 :is(.admin-experience, body[data-experience="admin"]) .button-action-secondary,
 :is(.admin-experience, body[data-experience="admin"]) .button-danger-secondary {
-  background: rgba(255, 255, 255, 0.44);
-  border-color: var(--border-01);
+  background: var(--background-neutral-01);
+  border-color: var(--border-02);
 }
 
 :is(.admin-experience, body[data-experience="admin"]) .input-normal,
 :is(.admin-experience, body[data-experience="admin"]) .input-error,
 :is(.admin-experience, body[data-experience="admin"]) .input-disabled {
-  background: rgba(255, 255, 255, 0.54);
-  backdrop-filter: blur(12px);
+  background: var(--background-neutral-00);
 }
 
 :is(.admin-experience, body[data-experience="admin"]) .table-head,
@@ -165,8 +178,7 @@
   .tbl-actions[data-type="head"],
 :is(.admin-experience, body[data-experience="admin"])
   .tbl-qualifier[data-type="head"] {
-  background: rgba(250, 251, 251, 0.82);
-  backdrop-filter: blur(16px);
+  background: var(--background-neutral-01);
 }
 
 :is(.admin-experience, body[data-experience="admin"])
@@ -175,7 +187,7 @@
 :is(.admin-experience, body[data-experience="admin"])
   .tbl-row[data-variant="list"]
   > td {
-  background: rgba(255, 255, 255, 0.46);
+  background: var(--background-neutral-00);
 }
 
 :is(.admin-experience, body[data-experience="admin"])
@@ -184,17 +196,13 @@
 :is(.admin-experience, body[data-experience="admin"])
   .tbl-row[data-variant="list"]:hover
   > td {
-  background: rgba(214, 229, 255, 0.56);
+  background: var(--background-neutral-01);
 }
 
 :is(.admin-experience, body[data-experience="admin"])
   .sidebar-tab-background-defaulted[data-state="active"],
 :is(.admin-experience, body[data-experience="admin"])
   .sidebar-tab-background-lowlight[data-state="active"] {
-  background: linear-gradient(
-    135deg,
-    rgba(255, 255, 255, 0.62),
-    rgba(230, 239, 252, 0.86)
-  );
-  box-shadow: 0 14px 34px -26px rgba(33, 64, 120, 0.56);
+  background: var(--background-neutral-00);
+  box-shadow: inset 0 0 0 1px var(--border-03);
 }

@@ -75,36 +75,40 @@ const CONNECTOR_DOC_SOURCE_EXCLUSIONS = new Set<ValidSources>([
   ValidSources.FederatedSlack,
 ]);
 
-const SPECIAL_AUTH_SUMMARIES: Partial<Record<ConfigurableSources, LocalizedCopy>> =
-  {
-    google_drive: copy(
-      "OAuth client JSON or Google service account",
-      "JSON de cliente OAuth o cuenta de servicio de Google"
-    ),
-    gmail: copy(
-      "OAuth client JSON or Google service account",
-      "JSON de cliente OAuth o cuenta de servicio de Google"
-    ),
-    slack: copy("Slack bot token or Slack OAuth", "Token de bot de Slack o OAuth de Slack"),
-    confluence: copy(
-      "Atlassian OAuth or access token",
-      "OAuth de Atlassian o token de acceso"
-    ),
-    sharepoint: copy(
-      "Microsoft Entra app with secret or certificate",
-      "App de Microsoft Entra con secreto o certificado"
-    ),
-    teams: copy(
-      "Microsoft Entra app with client secret",
-      "App de Microsoft Entra con client secret"
-    ),
-    github: copy(
-      "GitHub personal access token",
-      "Personal access token de GitHub"
-    ),
-    notion: copy("Notion internal integration", "Integracion interna de Notion"),
-    dropbox: copy("Dropbox app access token", "Access token de app de Dropbox"),
-  };
+const SPECIAL_AUTH_SUMMARIES: Partial<
+  Record<ConfigurableSources, LocalizedCopy>
+> = {
+  google_drive: copy(
+    "Platform Google OAuth, your own OAuth app, or service account JSON",
+    "OAuth de Google en plataforma, tu propia app OAuth o JSON de cuenta de servicio"
+  ),
+  gmail: copy(
+    "Google OAuth or service account JSON",
+    "Google OAuth o JSON de cuenta de servicio"
+  ),
+  slack: copy(
+    "Slack bot token or Slack OAuth",
+    "Token de bot de Slack o OAuth de Slack"
+  ),
+  confluence: copy(
+    "Atlassian OAuth or access token",
+    "OAuth de Atlassian o token de acceso"
+  ),
+  sharepoint: copy(
+    "Microsoft Entra app with secret or certificate",
+    "App de Microsoft Entra con secreto o certificado"
+  ),
+  teams: copy(
+    "Microsoft Entra app with client secret",
+    "App de Microsoft Entra con client secret"
+  ),
+  github: copy(
+    "GitHub personal access token",
+    "Personal access token de GitHub"
+  ),
+  notion: copy("Notion internal integration", "Integracion interna de Notion"),
+  dropbox: copy("Dropbox app access token", "Access token de app de Dropbox"),
+};
 
 const OFFICIAL_PROVIDER_LINKS: Partial<
   Record<ConfigurableSources, ConnectorProviderLink[]>
@@ -213,7 +217,10 @@ function copy(en: string, es: string): LocalizedCopy {
   return { en, es };
 }
 
-function joinWithAnd(values: string[], language: ConnectorDocsLanguage): string {
+function joinWithAnd(
+  values: string[],
+  language: ConnectorDocsLanguage
+): string {
   if (values.length === 0) {
     return "";
   }
@@ -272,9 +279,11 @@ function getCredentialFieldLabels(source: ConfigurableSources): string[] {
   const fields = new Set<string>();
 
   if (Array.isArray((template as { authMethods?: unknown[] }).authMethods)) {
-    const authMethods = (template as {
-      authMethods: Array<{ fields?: Record<string, unknown> }>;
-    }).authMethods;
+    const authMethods = (
+      template as {
+        authMethods: Array<{ fields?: Record<string, unknown> }>;
+      }
+    ).authMethods;
     authMethods.forEach((method) => {
       Object.keys(method.fields || {}).forEach((fieldKey) => {
         fields.add(getDisplayNameForCredentialKey(fieldKey));
@@ -306,10 +315,13 @@ function getBestExampleForField(fieldName: string): string {
   const normalized = fieldName.toLowerCase();
 
   if (normalized.includes("base url")) return "https://example.company.com";
-  if (normalized.includes("wiki base")) return "https://company.atlassian.net/wiki";
+  if (normalized.includes("wiki base"))
+    return "https://company.atlassian.net/wiki";
   if (normalized.includes("jira base")) return "https://company.atlassian.net";
-  if (normalized.includes("site")) return "https://contoso.sharepoint.com/sites/operations";
-  if (normalized.includes("folder")) return "https://drive.google.com/drive/folders/abc123";
+  if (normalized.includes("site"))
+    return "https://contoso.sharepoint.com/sites/operations";
+  if (normalized.includes("folder"))
+    return "https://drive.google.com/drive/folders/abc123";
   if (normalized.includes("page id")) return "131368";
   if (normalized.includes("space key")) return "KB";
   if (normalized.includes("repository owner")) return "activa-ai";
@@ -332,7 +344,9 @@ function getBestExampleForField(fieldName: string): string {
   return "<provider-value>";
 }
 
-function getFieldExamples(source: ConfigurableSources): ConnectorDocsFieldExample[] {
+function getFieldExamples(
+  source: ConfigurableSources
+): ConnectorDocsFieldExample[] {
   const fieldNames = [
     ...getCredentialFieldLabels(source),
     ...getConnectorFieldLabels(source),
@@ -364,7 +378,9 @@ function getAuthSummary(source: ConfigurableSources): LocalizedCopy {
   );
 }
 
-function buildGenericDocsEntry(source: ConfigurableSources): ConnectorDocsEntry {
+function buildGenericDocsEntry(
+  source: ConfigurableSources
+): ConnectorDocsEntry {
   const metadata = getSourceMetadata(source);
   const displayName = metadata.displayName;
   const credentialFields = getCredentialFieldLabels(source);
@@ -419,7 +435,10 @@ function buildGenericDocsEntry(source: ConfigurableSources): ConnectorDocsEntry 
     },
     beforeYouStart: [
       {
-        title: copy("Confirm provider access", "Confirma el acceso al proveedor"),
+        title: copy(
+          "Confirm provider access",
+          "Confirma el acceso al proveedor"
+        ),
         body: copy(
           `Use an account, token, or app that already has read access to the ${displayName} data you plan to index.`,
           `Usa una cuenta, token o app que ya tenga acceso de lectura a los datos de ${displayName} que quieres indexar.`
@@ -442,21 +461,30 @@ function buildGenericDocsEntry(source: ConfigurableSources): ConnectorDocsEntry 
     ],
     setup: [
       {
-        title: copy("Open the connector in ACTIVA", "Abre el conector en ACTIVA"),
+        title: copy(
+          "Open the connector in ACTIVA",
+          "Abre el conector en ACTIVA"
+        ),
         body: copy(
           `Go to ${setupUrl} and start the ${displayName} connection flow.`,
           `Ve a ${setupUrl} y empieza el flujo de conexion de ${displayName}.`
         ),
       },
       {
-        title: copy("Collect your provider values", "Reune los valores del proveedor"),
+        title: copy(
+          "Collect your provider values",
+          "Reune los valores del proveedor"
+        ),
         body: copy(
           `Create or copy the credentials required by ${displayName}. If your provider offers both broad and limited tokens, prefer the read-only and least-privilege option.`,
           `Crea o copia las credenciales que exige ${displayName}. Si el proveedor ofrece tokens amplios y limitados, prefiere la opcion de solo lectura y menor privilegio.`
         ),
       },
       {
-        title: copy("Fill the ACTIVA credential form", "Completa la credencial en ACTIVA"),
+        title: copy(
+          "Fill the ACTIVA credential form",
+          "Completa la credencial en ACTIVA"
+        ),
         body: copy(
           credentialFields.length > 0
             ? `Paste ${credentialTextEn} into the credential form and save it.`
@@ -467,7 +495,10 @@ function buildGenericDocsEntry(source: ConfigurableSources): ConnectorDocsEntry 
         ),
       },
       {
-        title: copy("Set the sync scope", "Define el alcance de sincronizacion"),
+        title: copy(
+          "Set the sync scope",
+          "Define el alcance de sincronizacion"
+        ),
         body: copy(
           connectorFields.length > 0
             ? `Complete the connector settings such as ${scopeTextEn}.`
@@ -478,7 +509,10 @@ function buildGenericDocsEntry(source: ConfigurableSources): ConnectorDocsEntry 
         ),
       },
       {
-        title: copy("Save and run the first sync", "Guarda y ejecuta la primera sincronizacion"),
+        title: copy(
+          "Save and run the first sync",
+          "Guarda y ejecuta la primera sincronizacion"
+        ),
         body: copy(
           "Create the connector, then watch the indexing status page until the first sync finishes successfully.",
           "Crea el conector y luego revisa la pagina de estado de indexacion hasta que la primera sincronizacion termine con exito."
@@ -494,7 +528,10 @@ function buildGenericDocsEntry(source: ConfigurableSources): ConnectorDocsEntry 
         ),
       },
       {
-        title: copy("Broader scope means broader visibility", "Mayor alcance significa mayor visibilidad"),
+        title: copy(
+          "Broader scope means broader visibility",
+          "Mayor alcance significa mayor visibilidad"
+        ),
         body: copy(
           "If you choose organization-wide, all-sites, or all-projects sync, your provider credential must also have organization-wide read access.",
           "Si eliges sincronizacion a nivel organizacion, todos los sitios o todos los proyectos, tu credencial del proveedor tambien debe tener acceso de lectura a ese mismo alcance."
@@ -503,14 +540,20 @@ function buildGenericDocsEntry(source: ConfigurableSources): ConnectorDocsEntry 
     ],
     mcp: [
       {
-        title: copy("Use the product fields exactly", "Usa exactamente los campos del producto"),
+        title: copy(
+          "Use the product fields exactly",
+          "Usa exactamente los campos del producto"
+        ),
         body: copy(
           "The ACTIVA form maps directly to the connector implementation, so field names and formats should match the provider values exactly.",
           "El formulario de ACTIVA mapea directamente a la implementacion del conector, asi que los nombres y formatos deben coincidir exactamente con los valores del proveedor."
         ),
       },
       {
-        title: copy("No hidden callback for token-based connectors", "Sin callback oculto para conectores por token"),
+        title: copy(
+          "No hidden callback for token-based connectors",
+          "Sin callback oculto para conectores por token"
+        ),
         body: copy(
           credentialFields.length > 0
             ? "For connectors that rely on pasted tokens, keys, or secrets, the MCP connection is finished as soon as ACTIVA validates and stores the credential."
@@ -530,7 +573,10 @@ function buildGenericDocsEntry(source: ConfigurableSources): ConnectorDocsEntry 
         ),
       },
       {
-        title: copy("Documents start appearing", "Empiezan a aparecer documentos"),
+        title: copy(
+          "Documents start appearing",
+          "Empiezan a aparecer documentos"
+        ),
         body: copy(
           "Document counts should increase and search results should start returning content from this source.",
           "El conteo de documentos debe subir y la busqueda debe empezar a devolver contenido de esta fuente."
@@ -539,21 +585,30 @@ function buildGenericDocsEntry(source: ConfigurableSources): ConnectorDocsEntry 
     ],
     troubleshooting: [
       {
-        title: copy("401, 403, or invalid credential", "401, 403 o credencial invalida"),
+        title: copy(
+          "401, 403, or invalid credential",
+          "401, 403 o credencial invalida"
+        ),
         body: copy(
           "This usually means the token is expired, the app secret was rotated, or the account lacks read permissions for the selected scope.",
           "Normalmente esto significa que el token expiro, el secreto de la app fue rotado o la cuenta no tiene permisos de lectura para el alcance seleccionado."
         ),
       },
       {
-        title: copy("Saved connector but no data", "Conector guardado pero sin datos"),
+        title: copy(
+          "Saved connector but no data",
+          "Conector guardado pero sin datos"
+        ),
         body: copy(
           "Review the scope fields carefully. A wrong site, team, folder, repository, or base URL often creates a valid connector that indexes nothing.",
           "Revisa con cuidado los campos de alcance. Un sitio, equipo, carpeta, repositorio o base URL incorrectos suelen crear un conector valido que no indexa nada."
         ),
       },
       {
-        title: copy("Unexpectedly broad sync", "Sincronizacion demasiado amplia"),
+        title: copy(
+          "Unexpectedly broad sync",
+          "Sincronizacion demasiado amplia"
+        ),
         body: copy(
           "If ACTIVA is indexing more than expected, tighten the connector scope and avoid organization-wide or all-content options.",
           "Si ACTIVA esta indexando mas de lo esperado, reduce el alcance del conector y evita opciones de toda la organizacion o todo el contenido."
@@ -608,7 +663,9 @@ function mergeDocsEntry(
   };
 }
 
-function buildSpecialDocsEntry(source: ConfigurableSources): ConnectorDocsEntry | null {
+function buildSpecialDocsEntry(
+  source: ConfigurableSources
+): ConnectorDocsEntry | null {
   const baseEntry = buildGenericDocsEntry(source);
   const metadata = getSourceMetadata(source);
   const callbackBase = HOST_URL.replace(/\/$/, "");
@@ -623,64 +680,85 @@ function buildSpecialDocsEntry(source: ConfigurableSources): ConnectorDocsEntry 
       },
       beforeYouStart: [
         {
-          title: copy("Google Workspace admin access", "Acceso de admin de Google Workspace"),
+          title: copy(
+            "Google Workspace admin access",
+            "Acceso de admin de Google Workspace"
+          ),
           body: copy(
             "You need a Google Workspace environment, plus enough admin control to enable APIs and, if you use a service account, approve domain-wide delegation.",
             "Necesitas un entorno de Google Workspace y suficiente control de admin para habilitar APIs y, si usas cuenta de servicio, aprobar domain-wide delegation."
           ),
         },
         {
-          title: copy("Enable the right Google APIs", "Habilita las APIs correctas de Google"),
+          title: copy(
+            "Enable the right Google APIs",
+            "Habilita las APIs correctas de Google"
+          ),
           body: copy(
             "In Google Cloud, enable Google Drive API and Admin SDK. Without both, ACTIVA cannot read files plus directory users and groups.",
             "En Google Cloud habilita Google Drive API y Admin SDK. Sin ambas, ACTIVA no puede leer archivos ni directorio de usuarios y grupos."
           ),
         },
         {
-          title: copy("Choose your auth mode", "Elige el modo de autenticacion"),
+          title: copy(
+            "Choose your auth mode",
+            "Elige el modo de autenticacion"
+          ),
           body: copy(
-            "You can upload an OAuth web-app JSON and complete interactive auth inside ACTIVA, or upload a Google service-account key and provide the primary admin email.",
-            "Puedes subir un JSON de app web OAuth y completar la autenticacion interactiva dentro de ACTIVA, o subir una llave de cuenta de servicio de Google y proporcionar el correo del admin principal."
+            "The recommended path is ACTIVA's built-in Connect with Google flow using the platform-managed Google OAuth client. Use the advanced path only if your organization wants to manage its own Google OAuth app or still depends on the legacy JSON setup.",
+            "La ruta recomendada es el flujo integrado Conectar con Google de ACTIVA usando el cliente OAuth de Google gestionado por la plataforma. Usa la ruta avanzada solo si tu organizacion quiere gestionar su propia app OAuth de Google o si todavia depende del setup legacy por JSON."
           ),
         },
       ],
       setup: [
         {
-          title: copy("Create Google credentials", "Crea las credenciales de Google"),
-          body: copy(
-            "In Google Cloud, create either a Web application OAuth client or a service account key JSON. Download the JSON file because ACTIVA expects that exact upload.",
-            "En Google Cloud crea un cliente OAuth de tipo Web application o una llave JSON de cuenta de servicio. Descarga el JSON porque ACTIVA espera exactamente ese archivo."
+          title: copy(
+            "Create the Google OAuth client",
+            "Crea el cliente OAuth de Google"
           ),
-        },
-        {
-          title: copy("Set the redirect URI if you use OAuth", "Configura el redirect URI si usas OAuth"),
           body: copy(
-            `For the web-app OAuth flow, add this redirect URI in Google Cloud before you upload the JSON: ${callbackBase}/admin/connectors/google-drive/oauth/callback`,
-            `Para el flujo OAuth con app web, agrega este redirect URI en Google Cloud antes de subir el JSON: ${callbackBase}/admin/connectors/google-drive/oauth/callback`
+            "Create a Web application OAuth client in Google Cloud for the platform-managed flow, or another Web application client if you plan to use the advanced customer-managed option with your own client ID and secret.",
+            "Crea un cliente OAuth de tipo Web application en Google Cloud para el flujo gestionado por la plataforma, o otro cliente Web application si piensas usar la opcion avanzada con tu propio client ID y client secret."
           ),
         },
         {
           title: copy(
-            "Approve domain-wide delegation if you use a service account",
-            "Aprueba domain-wide delegation si usas cuenta de servicio"
+            "Register the primary redirect URI",
+            "Registra el redirect URI principal"
           ),
           body: copy(
-            "Authorize the service account for the ACTIVA scopes in the Google Admin console. ACTIVA also asks for the Primary Admin Email when you finish the service-account credential.",
-            "Autoriza la cuenta de servicio para los scopes de ACTIVA en la consola de Google Admin. ACTIVA tambien te pide el correo del Primary Admin Email cuando terminas la credencial de cuenta de servicio."
-          ),
-        },
-        {
-          title: copy("Upload the JSON into ACTIVA", "Sube el JSON a ACTIVA"),
-          body: copy(
-            "Open the Google Drive connector, upload the JSON, and wait for ACTIVA to recognize whether it is an OAuth app or a service-account key.",
-            "Abre el conector de Google Drive, sube el JSON y espera a que ACTIVA reconozca si es una app OAuth o una llave de cuenta de servicio."
+            `For ACTIVA's Connect with Google flow, add this redirect URI in Google Cloud: ${callbackBase}/connector/oauth/callback/google_drive`,
+            `Para el flujo Conectar con Google de ACTIVA, agrega este redirect URI en Google Cloud: ${callbackBase}/connector/oauth/callback/google_drive`
           ),
         },
         {
-          title: copy("Finish authentication", "Completa la autenticacion"),
+          title: copy(
+            "Set the ACTIVA environment variables",
+            "Configura las variables de entorno de ACTIVA"
+          ),
           body: copy(
-            "If you uploaded an OAuth app, click Authenticate with Google Drive and complete consent. If you uploaded a service account, enter the primary admin email and save the credential.",
-            "Si subiste una app OAuth, haz clic en Authenticate with Google Drive y completa el consentimiento. Si subiste una cuenta de servicio, escribe el correo del admin principal y guarda la credencial."
+            "Configure OAUTH_GOOGLE_DRIVE_CLIENT_ID and OAUTH_GOOGLE_DRIVE_CLIENT_SECRET on the ACTIVA server so the primary OAuth flow can start from the connector screen.",
+            "Configura OAUTH_GOOGLE_DRIVE_CLIENT_ID y OAUTH_GOOGLE_DRIVE_CLIENT_SECRET en el servidor de ACTIVA para que el flujo OAuth principal pueda iniciarse desde la pantalla del conector."
+          ),
+        },
+        {
+          title: copy(
+            "Connect with Google inside ACTIVA",
+            "Conecta con Google dentro de ACTIVA"
+          ),
+          body: copy(
+            "Open the Google Drive connector and click Connect with Google. Sign in, approve the Drive scopes, and ACTIVA will store the encrypted tokens automatically.",
+            "Abre el conector de Google Drive y haz clic en Conectar con Google. Inicia sesion, aprueba los scopes de Drive y ACTIVA almacenara los tokens cifrados automaticamente."
+          ),
+        },
+        {
+          title: copy(
+            "Use manual JSON only when needed",
+            "Usa JSON manual solo cuando haga falta"
+          ),
+          body: copy(
+            `The advanced path lets you paste your own Google OAuth client ID and secret directly in ACTIVA. Legacy uploaded OAuth JSON and service-account JSON are still supported as fallbacks. If you use uploaded OAuth JSON, register ${callbackBase}/admin/connectors/google-drive/auth/callback. If you use a service account, approve domain-wide delegation and then enter the primary admin email in ACTIVA.`,
+            `La ruta avanzada te permite pegar tu propio client ID y client secret de Google OAuth directamente en ACTIVA. El JSON OAuth subido y el JSON de cuenta de servicio siguen disponibles como fallback. Si usas OAuth por JSON subido, registra ${callbackBase}/admin/connectors/google-drive/auth/callback. Si usas cuenta de servicio, aprueba domain-wide delegation y luego escribe el correo del admin principal en ACTIVA.`
           ),
         },
       ],
@@ -693,7 +771,10 @@ function buildSpecialDocsEntry(source: ConfigurableSources): ConnectorDocsEntry 
           ),
         },
         {
-          title: copy("Directory read access", "Acceso de lectura al directorio"),
+          title: copy(
+            "Directory read access",
+            "Acceso de lectura al directorio"
+          ),
           body: copy(
             "ACTIVA also uses admin.directory.user.readonly and admin.directory.group.readonly to map Google Workspace users and groups for permission-aware results.",
             "ACTIVA tambien usa admin.directory.user.readonly y admin.directory.group.readonly para mapear usuarios y grupos de Google Workspace y respetar permisos en los resultados."
@@ -704,8 +785,8 @@ function buildSpecialDocsEntry(source: ConfigurableSources): ConnectorDocsEntry 
         {
           title: copy("Mandatory callback", "Callback obligatorio"),
           body: copy(
-            `If you choose the OAuth client path, the redirect URI must match ${callbackBase}/admin/connectors/google-drive/oauth/callback exactly.`,
-            `Si eliges la ruta con cliente OAuth, el redirect URI debe coincidir exactamente con ${callbackBase}/admin/connectors/google-drive/oauth/callback.`
+            `For the primary flow, the redirect URI must match ${callbackBase}/connector/oauth/callback/google_drive exactly. Customer-managed OAuth uses the same callback path. Only the legacy uploaded OAuth JSON fallback needs ${callbackBase}/admin/connectors/google-drive/auth/callback.`,
+            `Para el flujo principal, el redirect URI debe coincidir exactamente con ${callbackBase}/connector/oauth/callback/google_drive. El OAuth gestionado por el cliente usa el mismo callback. Solo el fallback legacy con JSON OAuth subido necesita ${callbackBase}/admin/connectors/google-drive/auth/callback.`
           ),
         },
       ],
@@ -718,7 +799,10 @@ function buildSpecialDocsEntry(source: ConfigurableSources): ConnectorDocsEntry 
           ),
         },
         {
-          title: copy("Service account indexes nothing", "La cuenta de servicio no indexa nada"),
+          title: copy(
+            "Service account indexes nothing",
+            "La cuenta de servicio no indexa nada"
+          ),
           body: copy(
             "This usually means domain-wide delegation was not approved, the primary admin email is wrong, or the selected folders and drives are outside the approved scope.",
             "Normalmente esto significa que domain-wide delegation no fue aprobada, el correo del admin principal es incorrecto o las carpetas y unidades elegidas quedaron fuera del alcance aprobado."
@@ -745,7 +829,10 @@ function buildSpecialDocsEntry(source: ConfigurableSources): ConnectorDocsEntry 
           ),
         },
         {
-          title: copy("Choose OAuth or service account", "Elige OAuth o cuenta de servicio"),
+          title: copy(
+            "Choose OAuth or service account",
+            "Elige OAuth o cuenta de servicio"
+          ),
           body: copy(
             "You can upload an OAuth web-app JSON and complete Gmail consent inside ACTIVA, or use a service account with domain-wide delegation.",
             "Puedes subir un JSON de app web OAuth y completar el consentimiento de Gmail dentro de ACTIVA, o usar una cuenta de servicio con domain-wide delegation."
@@ -761,7 +848,10 @@ function buildSpecialDocsEntry(source: ConfigurableSources): ConnectorDocsEntry 
           ),
         },
         {
-          title: copy("Add the Gmail redirect URI if using OAuth", "Agrega el redirect URI de Gmail si usas OAuth"),
+          title: copy(
+            "Add the Gmail redirect URI if using OAuth",
+            "Agrega el redirect URI de Gmail si usas OAuth"
+          ),
           body: copy(
             `For the interactive OAuth path, register this callback in Google Cloud: ${callbackBase}/admin/connectors/gmail/oauth/callback`,
             `Para la ruta OAuth interactiva, registra este callback en Google Cloud: ${callbackBase}/admin/connectors/gmail/oauth/callback`
@@ -775,7 +865,10 @@ function buildSpecialDocsEntry(source: ConfigurableSources): ConnectorDocsEntry 
           ),
         },
         {
-          title: copy("Finish Gmail authentication", "Completa la autenticacion de Gmail"),
+          title: copy(
+            "Finish Gmail authentication",
+            "Completa la autenticacion de Gmail"
+          ),
           body: copy(
             "Use Authenticate with Gmail for uploaded OAuth credentials, or enter the primary admin email to finalize the service-account credential.",
             "Usa Authenticate with Gmail para credenciales OAuth subidas, o escribe el correo del admin principal para terminar la credencial de cuenta de servicio."
@@ -828,7 +921,10 @@ function buildSpecialDocsEntry(source: ConfigurableSources): ConnectorDocsEntry 
           ),
         },
         {
-          title: copy("Prepare the required scopes", "Prepara los scopes requeridos"),
+          title: copy(
+            "Prepare the required scopes",
+            "Prepara los scopes requeridos"
+          ),
           body: copy(
             "ACTIVA expects channel and identity read scopes such as channels:history, channels:read, groups:history, groups:read, im:history, users:read, users:read.email, and usergroups:read.",
             "ACTIVA espera scopes de lectura de canales e identidad como channels:history, channels:read, groups:history, groups:read, im:history, users:read, users:read.email y usergroups:read."
@@ -837,14 +933,20 @@ function buildSpecialDocsEntry(source: ConfigurableSources): ConnectorDocsEntry 
       ],
       setup: [
         {
-          title: copy("Configure OAuth scopes in Slack", "Configura los scopes OAuth en Slack"),
+          title: copy(
+            "Configure OAuth scopes in Slack",
+            "Configura los scopes OAuth en Slack"
+          ),
           body: copy(
             "In Slack App Management, add the ACTIVA bot token scopes and reinstall the app to the workspace so the updated token includes them.",
             "En Slack App Management agrega los bot token scopes de ACTIVA y vuelve a instalar la app en el workspace para que el token actualizado los incluya."
           ),
         },
         {
-          title: copy("Copy the bot token or use ACTIVA authorize", "Copia el bot token o usa authorize en ACTIVA"),
+          title: copy(
+            "Copy the bot token or use ACTIVA authorize",
+            "Copia el bot token o usa authorize en ACTIVA"
+          ),
           body: copy(
             "If your ACTIVA deployment exposes a Slack authorize button, you can use that flow. Otherwise paste the Slack bot token into the credential form and save it.",
             "Si tu despliegue de ACTIVA muestra un boton de authorize para Slack, puedes usar ese flujo. Si no, pega el bot token de Slack en el formulario de credencial de ACTIVA y guardalo."
@@ -889,14 +991,20 @@ function buildSpecialDocsEntry(source: ConfigurableSources): ConnectorDocsEntry 
       },
       setup: [
         {
-          title: copy("Create an internal integration", "Crea una integracion interna"),
+          title: copy(
+            "Create an internal integration",
+            "Crea una integracion interna"
+          ),
           body: copy(
             "Create a Notion internal integration, copy the integration token, and keep the workspace owner ready to share pages with that integration.",
             "Crea una integracion interna de Notion, copia el integration token y ten listo al owner del workspace para compartir paginas con esa integracion."
           ),
         },
         {
-          title: copy("Share the right pages", "Comparte las paginas correctas"),
+          title: copy(
+            "Share the right pages",
+            "Comparte las paginas correctas"
+          ),
           body: copy(
             "In Notion, explicitly share the pages or databases you want ACTIVA to see with the integration. Unshared pages stay invisible even if the token is valid.",
             "En Notion comparte explicitamente con la integracion las paginas o bases de datos que quieres que ACTIVA vea. Las paginas no compartidas siguen invisibles aunque el token sea valido."
@@ -905,7 +1013,10 @@ function buildSpecialDocsEntry(source: ConfigurableSources): ConnectorDocsEntry 
       ],
       troubleshooting: [
         {
-          title: copy("Token is valid but pages are missing", "El token es valido pero faltan paginas"),
+          title: copy(
+            "Token is valid but pages are missing",
+            "El token es valido pero faltan paginas"
+          ),
           body: copy(
             "This almost always means the page or database was never shared with the integration, or the Root Page ID points at the wrong subtree.",
             "Casi siempre significa que la pagina o base de datos nunca se compartio con la integracion, o que Root Page ID apunta al arbol equivocado."
@@ -932,7 +1043,10 @@ function buildSpecialDocsEntry(source: ConfigurableSources): ConnectorDocsEntry 
           ),
         },
         {
-          title: copy("Prefer read-only scopes", "Prefiere scopes de solo lectura"),
+          title: copy(
+            "Prefer read-only scopes",
+            "Prefiere scopes de solo lectura"
+          ),
           body: copy(
             "ACTIVA only needs read access. Avoid write scopes unless your security review explicitly requires them for another reason.",
             "ACTIVA solo necesita acceso de lectura. Evita scopes de escritura salvo que tu revision de seguridad los exija expresamente por otra razon."
@@ -952,7 +1066,10 @@ function buildSpecialDocsEntry(source: ConfigurableSources): ConnectorDocsEntry 
       },
       beforeYouStart: [
         {
-          title: copy("Pick the right token type", "Elige el tipo de token correcto"),
+          title: copy(
+            "Pick the right token type",
+            "Elige el tipo de token correcto"
+          ),
           body: copy(
             "Use a GitHub personal access token that can read the repositories ACTIVA should index. If your org uses SAML SSO, make sure the token is authorized for that organization too.",
             "Usa un personal access token de GitHub que pueda leer los repositorios que ACTIVA debe indexar. Si tu organizacion usa SAML SSO, asegurate tambien de que el token quede autorizado para esa organizacion."
@@ -968,7 +1085,10 @@ function buildSpecialDocsEntry(source: ConfigurableSources): ConnectorDocsEntry 
           ),
         },
         {
-          title: copy("Choose owner and repository mode", "Elige owner y modo de repositorio"),
+          title: copy(
+            "Choose owner and repository mode",
+            "Elige owner y modo de repositorio"
+          ),
           body: copy(
             "Set Repository Owner, then decide whether you want a specific repository list or everything the token can access under that owner.",
             "Define Repository Owner y luego decide si quieres una lista especifica de repositorios o todo lo que el token pueda ver bajo ese owner."
@@ -977,7 +1097,10 @@ function buildSpecialDocsEntry(source: ConfigurableSources): ConnectorDocsEntry 
       ],
       troubleshooting: [
         {
-          title: copy("Repository owner looks valid but nothing appears", "El owner parece valido pero no aparece nada"),
+          title: copy(
+            "Repository owner looks valid but nothing appears",
+            "El owner parece valido pero no aparece nada"
+          ),
           body: copy(
             "Check the token scopes and SSO authorization first. GitHub can accept the token but still hide organization repositories until the token is explicitly authorized for that org.",
             "Revisa primero los scopes del token y la autorizacion SSO. GitHub puede aceptar el token y aun asi ocultar repositorios de la organizacion hasta que el token quede autorizado explicitamente para esa org."
@@ -997,14 +1120,20 @@ function buildSpecialDocsEntry(source: ConfigurableSources): ConnectorDocsEntry 
       },
       beforeYouStart: [
         {
-          title: copy("Register a Microsoft Entra app", "Registra una app en Microsoft Entra"),
+          title: copy(
+            "Register a Microsoft Entra app",
+            "Registra una app en Microsoft Entra"
+          ),
           body: copy(
             "You need an app registration in the correct tenant, plus either a client secret or a PFX certificate depending on the ACTIVA auth mode you want.",
             "Necesitas un app registration en el tenant correcto y, segun el modo de ACTIVA que quieras, un client secret o un certificado PFX."
           ),
         },
         {
-          title: copy("Know your tenant values", "Ten a mano los valores del tenant"),
+          title: copy(
+            "Know your tenant values",
+            "Ten a mano los valores del tenant"
+          ),
           body: copy(
             "ACTIVA asks for SharePoint Client ID, Directory ID, and then either Client Secret or certificate fields. You should also know the exact SharePoint site URLs you want to index.",
             "ACTIVA pide SharePoint Client ID, Directory ID y luego Client Secret o campos del certificado. Tambien deberias conocer las URLs exactas de los sitios de SharePoint que quieres indexar."
@@ -1013,28 +1142,40 @@ function buildSpecialDocsEntry(source: ConfigurableSources): ConnectorDocsEntry 
       ],
       setup: [
         {
-          title: copy("Create the Entra app and grant admin consent", "Crea la app de Entra y concede admin consent"),
+          title: copy(
+            "Create the Entra app and grant admin consent",
+            "Crea la app de Entra y concede admin consent"
+          ),
           body: copy(
             "Register the app, add the Microsoft Graph or SharePoint application permissions your tenant requires, and complete admin consent before testing the connector.",
             "Registra la app, agrega los permisos de Microsoft Graph o SharePoint que requiera tu tenant y completa admin consent antes de probar el conector."
           ),
         },
         {
-          title: copy("Choose ACTIVA auth mode", "Elige el modo de autenticacion en ACTIVA"),
+          title: copy(
+            "Choose ACTIVA auth mode",
+            "Elige el modo de autenticacion en ACTIVA"
+          ),
           body: copy(
             "Use Client Secret if your organization allows secrets. Use Certificate Authentication if your security policy prefers a PFX certificate and password instead.",
             "Usa Client Secret si tu organizacion permite secretos. Usa Certificate Authentication si tu politica de seguridad prefiere un certificado PFX y su password."
           ),
         },
         {
-          title: copy("Enter SharePoint site scope", "Ingresa el alcance por sitio de SharePoint"),
+          title: copy(
+            "Enter SharePoint site scope",
+            "Ingresa el alcance por sitio de SharePoint"
+          ),
           body: copy(
             "Use the Sites field to index all sites, one full site URL, or a deeper folder-scoped URL. Then decide whether to include documents, site pages, or both.",
             "Usa el campo Sites para indexar todos los sitios, una URL completa de sitio o una URL mas profunda limitada a carpeta. Luego decide si incluyes documentos, paginas del sitio o ambos."
           ),
         },
         {
-          title: copy("Adjust sovereign cloud values if needed", "Ajusta valores soberanos si hace falta"),
+          title: copy(
+            "Adjust sovereign cloud values if needed",
+            "Ajusta valores soberanos si hace falta"
+          ),
           body: copy(
             "Only change Authority Host, Graph API Host, or SharePoint Domain Suffix when your tenant is in GCC High, DoD, or another non-default Microsoft cloud.",
             "Solo cambia Authority Host, Graph API Host o SharePoint Domain Suffix cuando tu tenant este en GCC High, DoD u otra nube de Microsoft no estandar."
@@ -1043,14 +1184,20 @@ function buildSpecialDocsEntry(source: ConfigurableSources): ConnectorDocsEntry 
       ],
       permissions: [
         {
-          title: copy("Application permissions, not delegated login", "Permisos de aplicacion, no login delegado"),
+          title: copy(
+            "Application permissions, not delegated login",
+            "Permisos de aplicacion, no login delegado"
+          ),
           body: copy(
             "ACTIVA uses the app's client credentials and the Graph .default scope. In practice that means the app registration must already have the SharePoint and Graph read permissions your tenant requires.",
             "ACTIVA usa client credentials de la app y el scope .default de Graph. En la practica eso significa que el app registration ya debe tener los permisos de lectura de SharePoint y Graph que requiera tu tenant."
           ),
         },
         {
-          title: copy("Expect site and file read permissions", "Espera permisos de lectura de sitio y archivos"),
+          title: copy(
+            "Expect site and file read permissions",
+            "Espera permisos de lectura de sitio y archivos"
+          ),
           body: copy(
             "Because ACTIVA reads sites, libraries, files, and pages, your app will typically need broad read access such as Sites.Read.All and related file read permissions approved by your admin team.",
             "Como ACTIVA lee sitios, bibliotecas, archivos y paginas, tu app normalmente necesitara acceso amplio de lectura como Sites.Read.All y permisos relacionados de lectura de archivos aprobados por tu equipo admin."
@@ -1059,14 +1206,20 @@ function buildSpecialDocsEntry(source: ConfigurableSources): ConnectorDocsEntry 
       ],
       mcp: [
         {
-          title: copy("No redirect URI in the ACTIVA flow", "Sin redirect URI dentro del flujo de ACTIVA"),
+          title: copy(
+            "No redirect URI in the ACTIVA flow",
+            "Sin redirect URI dentro del flujo de ACTIVA"
+          ),
           body: copy(
             "SharePoint setup in ACTIVA is client-credentials based, so there is no user-facing callback. The mandatory values are the Entra app identifiers and whichever secret or certificate path you choose.",
             "La configuracion de SharePoint en ACTIVA se basa en client credentials, asi que no hay callback visible para el usuario. Los valores obligatorios son los identificadores de la app de Entra y el secreto o certificado que elijas."
           ),
         },
         {
-          title: copy("OneDrive personal is not a separate connector", "OneDrive personal no es un conector separado"),
+          title: copy(
+            "OneDrive personal is not a separate connector",
+            "OneDrive personal no es un conector separado"
+          ),
           body: copy(
             "This build treats Microsoft 365 team content through SharePoint and Teams. OneDrive personal sites are not exposed as a standalone ACTIVA connector here.",
             "Este build trata el contenido de equipo de Microsoft 365 mediante SharePoint y Teams. Los sitios personales de OneDrive no se exponen aqui como un conector independiente de ACTIVA."
@@ -1075,7 +1228,10 @@ function buildSpecialDocsEntry(source: ConfigurableSources): ConnectorDocsEntry 
       ],
       troubleshooting: [
         {
-          title: copy("App validates but some sites fail", "La app valida pero fallan algunos sitios"),
+          title: copy(
+            "App validates but some sites fail",
+            "La app valida pero fallan algunos sitios"
+          ),
           body: copy(
             "Review whether the app has tenant-wide consent, whether the site URLs are correct, and whether you're mixing site and folder URLs in an unexpected way.",
             "Revisa si la app tiene consentimiento a nivel tenant, si las URLs de los sitios son correctas y si estas mezclando URLs de sitio y carpeta de una forma inesperada."
@@ -1102,7 +1258,10 @@ function buildSpecialDocsEntry(source: ConfigurableSources): ConnectorDocsEntry 
           ),
         },
         {
-          title: copy("Save client credentials in ACTIVA", "Guarda los client credentials en ACTIVA"),
+          title: copy(
+            "Save client credentials in ACTIVA",
+            "Guarda los client credentials en ACTIVA"
+          ),
           body: copy(
             "Paste Teams Client ID, Teams Client Secret, and Teams Directory ID into the ACTIVA credential form.",
             "Pega Teams Client ID, Teams Client Secret y Teams Directory ID en el formulario de credencial de ACTIVA."
@@ -1111,7 +1270,10 @@ function buildSpecialDocsEntry(source: ConfigurableSources): ConnectorDocsEntry 
       ],
       permissions: [
         {
-          title: copy("Graph application permissions", "Permisos de aplicacion de Graph"),
+          title: copy(
+            "Graph application permissions",
+            "Permisos de aplicacion de Graph"
+          ),
           body: copy(
             "ACTIVA authenticates with the Graph .default scope, so the app registration must already have the Teams and identity read permissions approved by your administrator.",
             "ACTIVA se autentica con el scope .default de Graph, asi que el app registration ya debe tener aprobados por el administrador los permisos de lectura de Teams e identidad."
@@ -1147,14 +1309,20 @@ function buildSpecialDocsEntry(source: ConfigurableSources): ConnectorDocsEntry 
           ),
         },
         {
-          title: copy("Register the Atlassian OAuth app", "Registra la app OAuth de Atlassian"),
+          title: copy(
+            "Register the Atlassian OAuth app",
+            "Registra la app OAuth de Atlassian"
+          ),
           body: copy(
             `For Confluence Cloud OAuth, register ${callbackBase}/admin/connectors/confluence/oauth/callback as the redirect URI and enable the Confluence read scopes ACTIVA needs.`,
             `Para OAuth de Confluence Cloud, registra ${callbackBase}/admin/connectors/confluence/oauth/callback como redirect URI y habilita los scopes de lectura de Confluence que ACTIVA necesita.`
           ),
         },
         {
-          title: copy("Finalize the accessible resource", "Finaliza el accessible resource"),
+          title: copy(
+            "Finalize the accessible resource",
+            "Finaliza el accessible resource"
+          ),
           body: copy(
             "After OAuth succeeds, ACTIVA asks you to choose the accessible resource or site it should bind to the stored credential. Do not skip this finalization step.",
             "Despues de que OAuth termina bien, ACTIVA te pide elegir el accessible resource o sitio que debe asociar a la credencial guardada. No omitas ese paso final."
@@ -1163,7 +1331,10 @@ function buildSpecialDocsEntry(source: ConfigurableSources): ConnectorDocsEntry 
       ],
       permissions: [
         {
-          title: copy("Confluence Cloud read scopes", "Scopes de lectura de Confluence Cloud"),
+          title: copy(
+            "Confluence Cloud read scopes",
+            "Scopes de lectura de Confluence Cloud"
+          ),
           body: copy(
             "ACTIVA requests Confluence read scopes for spaces, content, permissions, users, groups, and attachments. If any of those are missing, the connector may validate partially but fail during indexing or permission sync.",
             "ACTIVA solicita scopes de lectura de Confluence para spaces, contenido, permisos, usuarios, grupos y adjuntos. Si falta alguno, el conector puede validar parcialmente pero fallar durante indexacion o sincronizacion de permisos."
@@ -1172,7 +1343,10 @@ function buildSpecialDocsEntry(source: ConfigurableSources): ConnectorDocsEntry 
       ],
       troubleshooting: [
         {
-          title: copy("OAuth succeeds but connector still has no site", "OAuth termina bien pero el conector sigue sin sitio"),
+          title: copy(
+            "OAuth succeeds but connector still has no site",
+            "OAuth termina bien pero el conector sigue sin sitio"
+          ),
           body: copy(
             "That usually means the finalize step was skipped or the wrong accessible resource was selected after the callback.",
             "Eso normalmente significa que se omitio el paso de finalize o que se eligio el accessible resource incorrecto despues del callback."
@@ -1207,7 +1381,9 @@ export function getConnectorDocsPath(source: ValidSources): string | null {
     return null;
   }
 
-  return `${CONNECTOR_DOCS_INDEX_PATH}/${sourceToConnectorDocsSlug(maybeSource)}`;
+  return `${CONNECTOR_DOCS_INDEX_PATH}/${sourceToConnectorDocsSlug(
+    maybeSource
+  )}`;
 }
 
 export function getConnectorDocsIndexPath(): string {
@@ -1236,19 +1412,14 @@ export function getConnectorDocsEntryBySlug(
   return getConnectorDocsEntry(source);
 }
 
-export function getSourceCategoryCopy(
-  category: SourceCategory
-): LocalizedCopy {
+export function getSourceCategoryCopy(category: SourceCategory): LocalizedCopy {
   switch (category) {
     case SourceCategory.Wiki:
       return copy("Knowledge Base & Wikis", "Bases de conocimiento y wikis");
     case SourceCategory.Storage:
       return copy("Cloud Storage", "Almacenamiento en la nube");
     case SourceCategory.TicketingAndTaskManagement:
-      return copy(
-        "Ticketing & Task Management",
-        "Tickets y gestion de tareas"
-      );
+      return copy("Ticketing & Task Management", "Tickets y gestion de tareas");
     case SourceCategory.Messaging:
       return copy("Messaging", "Mensajeria");
     case SourceCategory.Sales:
