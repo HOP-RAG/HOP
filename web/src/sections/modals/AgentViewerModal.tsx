@@ -41,6 +41,7 @@ import { getDisplayName } from "@/lib/llmConfig/utils";
 import { useLLMProviders } from "@/hooks/useLLMProviders";
 import { Interactive } from "@opal/core";
 import { DEFAULT_APPLICATION_NAME } from "@/lib/constants";
+import { useAppLanguage } from "@/providers/AppLanguageProvider";
 
 /**
  * Read-only MCP Server card for the viewer modal.
@@ -174,6 +175,7 @@ export interface AgentViewerModalProps {
 export default function AgentViewerModal({ agent }: AgentViewerModalProps) {
   const agentViewerModal = useModal();
   const router = useRouter();
+  const { t } = useAppLanguage();
   const { allRecentFiles } = useProjectsContext();
   const { llmProviders } = useLLMProviders(agent.id);
 
@@ -349,8 +351,8 @@ export default function AgentViewerModal({ agent }: AgentViewerModalProps) {
                 )}
                 {defaultModel && (
                   <Horizontal
-                    title="Default Model"
-                    description="Este modelo se usará por defecto en tus chats."
+                    title={t("llm.defaultModel.title")}
+                    description={t("llm.defaultModel.description")}
                     nonInteractive
                     sizePreset="main-ui"
                   >
