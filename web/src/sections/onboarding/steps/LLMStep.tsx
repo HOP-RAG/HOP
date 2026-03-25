@@ -19,6 +19,7 @@ import { Disabled } from "@opal/core";
 import { ProviderIcon } from "@/app/admin/configuration/llm/ProviderIcon";
 import { SvgCheckCircle, SvgCpu, SvgExternalLink } from "@opal/icons";
 import { ContentAction } from "@opal/layouts";
+import { useAppLanguage } from "@/providers/AppLanguageProvider";
 
 type LLMStepProps = {
   state: OnboardingState;
@@ -95,6 +96,7 @@ const LLMStepInner = ({
   llmDescriptors,
   disabled,
 }: LLMStepProps) => {
+  const { t } = useAppLanguage();
   const isLoading = !llmDescriptors || llmDescriptors.length === 0;
 
   const [selectedProvider, setSelectedProvider] =
@@ -131,8 +133,8 @@ const LLMStepInner = ({
         >
           <ContentAction
             icon={SvgCpu}
-            title="Connect your LLM models"
-            description="La aplicación admite modelos autohospedados y proveedores populares."
+            title={t("onboarding.llm.title")}
+            description={t("onboarding.llm.description")}
             sizePreset="main-ui"
             variant="section"
             paddingVariant="lg"
@@ -143,7 +145,7 @@ const LLMStepInner = ({
                   rightIcon={SvgExternalLink}
                   href="/admin/configuration/llm"
                 >
-                  View in Admin Panel
+                  {t("onboarding.llm.viewInAdmin")}
                 </Button>
               </Disabled>
             }
@@ -201,8 +203,8 @@ const LLMStepInner = ({
                 {/* Custom provider card */}
                 <div className="basis-[calc(50%-theme(spacing.1)/2)] grow">
                   <LLMProviderCard
-                    title="Custom LLM Provider"
-                    subtitle="LiteLLM Compatible APIs"
+                    title={t("onboarding.llm.customProviderTitle")}
+                    subtitle={t("onboarding.llm.customProviderSubtitle")}
                     disabled={disabled}
                     isConnected={onboardingState.data.llmProviders?.some(
                       (provider) => provider === "custom"
@@ -232,11 +234,14 @@ const LLMStepInner = ({
             providers={onboardingState.data.llmProviders || []}
           />
           <Text as="p" text04 mainUiAction>
-            {onboardingState.data.llmProviders?.length || 0}{" "}
-            {(onboardingState.data.llmProviders?.length || 0) === 1
-              ? "model"
-              : "models"}{" "}
-            connected
+            {t(
+              (onboardingState.data.llmProviders?.length || 0) === 1
+                ? "onboarding.llm.connected.one"
+                : "onboarding.llm.connected.other",
+              {
+                count: onboardingState.data.llmProviders?.length || 0,
+              }
+            )}
           </Text>
         </div>
         <div className="p-1">

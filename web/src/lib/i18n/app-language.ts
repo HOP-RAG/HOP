@@ -94,6 +94,41 @@ const translations = {
     "admin.routes.scim.sidebar": "SCIM",
     "admin.routes.debug.title": "Debug Logs",
     "admin.routes.debug.sidebar": "Debug Logs",
+    "llm.defaultModel.title": "Default Model",
+    "llm.defaultModel.description":
+      "This model will be used by default in your chats.",
+    "llm.defaultModel.placeholder": "Select a default model",
+    "admin.llm.page.noProviders": "Set up an LLM provider to start chatting.",
+    "admin.llm.page.availableProviders": "Available Providers",
+    "admin.llm.page.addProvider": "Add Provider",
+    "admin.llm.page.addProviderDescription":
+      "The app supports popular providers and self-hosted models.",
+    "admin.llm.page.connect": "Connect",
+    "admin.llm.page.setUp": "Set Up",
+    "admin.llm.page.defaultTag": "Default",
+    "admin.llm.page.deleteTitle": "Delete {{name}}",
+    "admin.llm.page.deleteButton": "Delete",
+    "admin.llm.page.deleteConfirm":
+      "All LLM models from provider {{name}} will be removed and unavailable for future chats. Chat history will be preserved.",
+    "admin.llm.page.deleteLastProvider":
+      "Connect another provider to continue using chats.",
+    "admin.llm.toast.providerDeleted": "Provider deleted successfully!",
+    "admin.llm.toast.providerDeleteFailed":
+      "Failed to delete provider: {{message}}",
+    "admin.llm.toast.defaultModelUpdated":
+      "Default model updated successfully!",
+    "admin.llm.toast.defaultModelUpdateFailed":
+      "Failed to set default model: {{message}}",
+    "admin.llm.toast.missingProviderModal":
+      'No modal mapping for provider "{{name}}".',
+    "onboarding.llm.title": "Connect your LLM models",
+    "onboarding.llm.description":
+      "The app supports self-hosted models and popular providers.",
+    "onboarding.llm.viewInAdmin": "View in Admin Panel",
+    "onboarding.llm.customProviderTitle": "Custom LLM Provider",
+    "onboarding.llm.customProviderSubtitle": "LiteLLM Compatible APIs",
+    "onboarding.llm.connected.one": "{{count}} model connected",
+    "onboarding.llm.connected.other": "{{count}} models connected",
     "connectors.auth.sectionDescription.default":
       "OAuth is the default path here. Connect your account, approve access, and then continue with connector-specific setup like folder or source selection.",
     "connectors.auth.sectionDescription.google":
@@ -401,6 +436,42 @@ const translations = {
     "admin.routes.scim.sidebar": "SCIM",
     "admin.routes.debug.title": "Logs de depuracion",
     "admin.routes.debug.sidebar": "Logs de depuracion",
+    "llm.defaultModel.title": "Modelo por defecto",
+    "llm.defaultModel.description":
+      "Este modelo se usara por defecto en tus chats.",
+    "llm.defaultModel.placeholder": "Selecciona un modelo por defecto",
+    "admin.llm.page.noProviders":
+      "Configura un proveedor de LLM para empezar a chatear.",
+    "admin.llm.page.availableProviders": "Proveedores disponibles",
+    "admin.llm.page.addProvider": "Agregar proveedor",
+    "admin.llm.page.addProviderDescription":
+      "La app admite proveedores populares y modelos autohospedados.",
+    "admin.llm.page.connect": "Conectar",
+    "admin.llm.page.setUp": "Configurar",
+    "admin.llm.page.defaultTag": "Predeterminado",
+    "admin.llm.page.deleteTitle": "Eliminar {{name}}",
+    "admin.llm.page.deleteButton": "Eliminar",
+    "admin.llm.page.deleteConfirm":
+      "Todos los modelos LLM del proveedor {{name}} se eliminaran y dejaran de estar disponibles para futuros chats. El historial de chats se conservara.",
+    "admin.llm.page.deleteLastProvider":
+      "Conecta otro proveedor para seguir usando los chats.",
+    "admin.llm.toast.providerDeleted": "Proveedor eliminado correctamente.",
+    "admin.llm.toast.providerDeleteFailed":
+      "No se pudo eliminar el proveedor: {{message}}",
+    "admin.llm.toast.defaultModelUpdated":
+      "Modelo por defecto actualizado correctamente.",
+    "admin.llm.toast.defaultModelUpdateFailed":
+      "No se pudo definir el modelo por defecto: {{message}}",
+    "admin.llm.toast.missingProviderModal":
+      'No existe un modal configurado para el proveedor "{{name}}".',
+    "onboarding.llm.title": "Conecta tus modelos LLM",
+    "onboarding.llm.description":
+      "La app admite modelos autohospedados y proveedores populares.",
+    "onboarding.llm.viewInAdmin": "Ver en panel admin",
+    "onboarding.llm.customProviderTitle": "Proveedor LLM custom",
+    "onboarding.llm.customProviderSubtitle": "APIs compatibles con LiteLLM",
+    "onboarding.llm.connected.one": "{{count}} modelo conectado",
+    "onboarding.llm.connected.other": "{{count}} modelos conectados",
     "connectors.auth.sectionDescription.default":
       "OAuth es la ruta predeterminada aqui. Conecta tu cuenta, aprueba el acceso y luego continua con la configuracion especifica del conector, como carpetas o fuentes.",
     "connectors.auth.sectionDescription.google":

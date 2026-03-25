@@ -13,7 +13,7 @@ import { Button } from "@opal/components";
 import { Hoverable } from "@opal/core";
 import { SvgArrowExchange, SvgSettings, SvgTrash } from "@opal/icons";
 import * as SettingsLayouts from "@/layouts/settings-layouts";
-import { ADMIN_ROUTES } from "@/lib/admin-routes";
+import { ADMIN_ROUTES, getAdminRouteCopy } from "@/lib/admin-routes";
 import * as GeneralLayouts from "@/layouts/general-layouts";
 import {
   getProviderDisplayName,
@@ -46,6 +46,7 @@ import { CustomModal } from "@/sections/modals/llmConfig/CustomModal";
 import { LMStudioForm } from "@/sections/modals/llmConfig/LMStudioForm";
 import { LiteLLMProxyModal } from "@/sections/modals/llmConfig/LiteLLMProxyModal";
 import { Section } from "@/layouts/general-layouts";
+import { useAppLanguage } from "@/providers/AppLanguageProvider";
 
 const route = ADMIN_ROUTES.LLM_MODELS;
 
@@ -142,6 +143,7 @@ function ExistingProviderCard({
   isLastProvider,
 }: ExistingProviderCardProps) {
   const { mutate } = useSWRConfig();
+  const { t } = useAppLanguage();
   const [isOpen, setIsOpen] = useState(false);
   const deleteModal = useCreateModal();
 
@@ -150,10 +152,14 @@ function ExistingProviderCard({
       await deleteLlmProvider(provider.id);
       await refreshLlmProviderCaches(mutate);
       deleteModal.toggle(false);
-      toast.success("Provider deleted successfully!");
+      toast.success(t("admin.llm.toast.providerDeleted"));
     } catch (e) {
       const message = e instanceof Error ? e.message : "Unknown error";
-      toast.error(`Failed to delete provider: ${message}`);
+      toast.error(
+        t("admin.llm.toast.providerDeleteFailed", {
+          message,
+        })
+      );
     }
   };
 
@@ -162,24 +168,24 @@ function ExistingProviderCard({
       {deleteModal.isOpen && (
         <ConfirmationModalLayout
           icon={SvgTrash}
-          title={`Delete ${provider.name}`}
+          title={t("admin.llm.page.deleteTitle", {
+            name: provider.name,
+          })}
           onClose={() => deleteModal.toggle(false)}
           submit={
             <Button variant="danger" onClick={handleDelete}>
-              Delete
+              {t("admin.llm.page.deleteButton")}
             </Button>
           }
         >
           <Section alignItems="start" gap={0.5}>
             <Text text03>
-              All LLM models from provider <b>{provider.name}</b> will be
-              removed and unavailable for future chats. Chat history will be
-              preserved.
+              {t("admin.llm.page.deleteConfirm", {
+                name: provider.name,
+              })}
             </Text>
             {isLastProvider && (
-              <Text text03>
-                Connect another provider to continue using chats.
-              </Text>
+              <Text text03>{t("admin.llm.page.deleteLastProvider")}</Text>
             )}
           </Section>
         </ConfirmationModalLayout>
@@ -193,7 +199,11 @@ function ExistingProviderCard({
             description={getProviderDisplayName(provider.provider)}
             sizePreset="main-content"
             variant="section"
-            tag={isDefault ? { title: "Default", color: "blue" } : undefined}
+            tag={
+              isDefault
+                ? { title: t("admin.llm.page.defaultTag"), color: "blue" }
+                : undefined
+            }
             rightChildren={
               <Section flexDirection="row" gap={0} alignItems="start">
                 <Hoverable.Item
@@ -242,6 +252,7 @@ function NewProviderCard({
   isFirstProvider,
   formFn,
 }: NewProviderCardProps) {
+  const { t } = useAppLanguage();
   const [isOpen, setIsOpen] = useState(false);
 
   return (
@@ -258,7 +269,7 @@ function NewProviderCard({
             prominence="tertiary"
             onClick={() => setIsOpen(true)}
           >
-            Connect
+            {t("admin.llm.page.connect")}
           </Button>
         }
       />
@@ -278,6 +289,7 @@ interface NewCustomProviderCardProps {
 function NewCustomProviderCard({
   isFirstProvider,
 }: NewCustomProviderCardProps) {
+  const { t } = useAppLanguage();
   const [isOpen, setIsOpen] = useState(false);
 
   return (
@@ -294,7 +306,7 @@ function NewCustomProviderCard({
             prominence="tertiary"
             onClick={() => setIsOpen(true)}
           >
-            Set Up
+            {t("admin.llm.page.setUp")}
           </Button>
         }
       />
@@ -313,6 +325,8 @@ function NewCustomProviderCard({
 
 export default function LLMConfigurationPage() {
   const { mutate } = useSWRConfig();
+  const { t } = useAppLanguage();
+  const routeCopy = getAdminRouteCopy(route, t);
   const { llmProviders: existingLlmProviders, defaultText } =
     useAdminLLMProviders();
   const { wellKnownLLMProviders } = useWellKnownLLMProviders();
@@ -354,23 +368,31 @@ export default function LLMConfigurationPage() {
     try {
       await setDefaultLlmModel(providerId, modelName);
       await refreshLlmProviderCaches(mutate);
-      toast.success("Default model updated successfully!");
+      toast.success(t("admin.llm.toast.defaultModelUpdated"));
     } catch (e) {
       const message = e instanceof Error ? e.message : "Unknown error";
-      toast.error(`Failed to set default model: ${message}`);
+      toast.error(
+        t("admin.llm.toast.defaultModelUpdateFailed", {
+          message,
+        })
+      );
     }
   }
 
   return (
     <SettingsLayouts.Root>
-      <SettingsLayouts.Header icon={route.icon} title={route.title} separator />
+      <SettingsLayouts.Header
+        icon={route.icon}
+        title={routeCopy.title}
+        separator
+      />
 
       <SettingsLayouts.Body>
         {hasProviders ? (
           <Card>
             <HorizontalInput
-              title="Default Model"
-              description="Este modelo se usará por defecto en tus chats."
+              title={t("llm.defaultModel.title")}
+              description={t("llm.defaultModel.description")}
               nonInteractive
               center
             >
@@ -378,7 +400,9 @@ export default function LLMConfigurationPage() {
                 value={currentDefaultValue}
                 onValueChange={handleDefaultModelChange}
               >
-                <InputSelect.Trigger placeholder="Select a default model" />
+                <InputSelect.Trigger
+                  placeholder={t("llm.defaultModel.placeholder")}
+                />
                 <InputSelect.Content>
                   {providersWithVisibleModels.map(
                     ({ provider, visibleModels }) => (
@@ -405,7 +429,7 @@ export default function LLMConfigurationPage() {
             large
             icon
             close={false}
-            text="Set up an LLM provider to start chatting."
+            text={t("admin.llm.page.noProviders")}
             className="w-full"
           />
         )}
@@ -420,7 +444,7 @@ export default function LLMConfigurationPage() {
               justifyContent="start"
             >
               <Content
-                title="Available Providers"
+                title={t("admin.llm.page.availableProviders")}
                 sizePreset="main-content"
                 variant="section"
               />
@@ -449,8 +473,8 @@ export default function LLMConfigurationPage() {
           justifyContent="start"
         >
           <Content
-            title="Add Provider"
-            description="La aplicación admite proveedores populares y modelos autohospedados."
+            title={t("admin.llm.page.addProvider")}
+            description={t("admin.llm.page.addProviderDescription")}
             sizePreset="main-content"
             variant="section"
           />
@@ -460,7 +484,9 @@ export default function LLMConfigurationPage() {
               const formFn = PROVIDER_MODAL_MAP[provider.name];
               if (!formFn) {
                 toast.error(
-                  `No modal mapping for provider "${provider.name}".`
+                  t("admin.llm.toast.missingProviderModal", {
+                    name: provider.name,
+                  })
                 );
                 return null;
               }

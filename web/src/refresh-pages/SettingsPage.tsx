@@ -62,6 +62,7 @@ import { usePaidEnterpriseFeaturesEnabled } from "@/components/settings/usePaidE
 import { useSettingsContext } from "@/providers/SettingsProvider";
 import SimpleTooltip from "@/refresh-components/SimpleTooltip";
 import { useCloudSubscription } from "@/hooks/useCloudSubscription";
+import { useAppLanguage } from "@/providers/AppLanguageProvider";
 
 interface PAT {
   id: number;
@@ -744,6 +745,7 @@ function PromptShortcuts() {
 }
 
 function ChatPreferencesSettings() {
+  const { t } = useAppLanguage();
   const {
     user,
     updateUserPersonalization,
@@ -829,8 +831,8 @@ function ChatPreferencesSettings() {
         />
         <Card>
           <InputLayouts.Horizontal
-            title="Default Model"
-            description="Este modelo se usará por defecto en tus chats."
+            title={t("llm.defaultModel.title")}
+            description={t("llm.defaultModel.description")}
           >
             <LLMPopover
               llmManager={llmManager}
@@ -1238,8 +1240,8 @@ function AccountsAccessSettings() {
             <Text>
               Any application using the token{" "}
               <Text className="!font-bold">{tokenToDelete.name}</Text>{" "}
-              <Text secondaryMono>({tokenToDelete.token_display})</Text>{" "}
-              perderá acceso a la aplicación. Esta acción no se puede deshacer.
+              <Text secondaryMono>({tokenToDelete.token_display})</Text> perderá
+              acceso a la aplicación. Esta acción no se puede deshacer.
             </Text>
             <Text>Are you sure you want to revoke this token?</Text>
           </Section>
@@ -1571,8 +1573,9 @@ function FederatedConnectorCard({
         >
           <Section gap={0.5} alignItems="start">
             <Text>
-              La aplicación ya no podrá acceder ni buscar contenido de tu
-              cuenta de <Text className="!font-bold">{sourceMetadata.displayName}</Text>.
+              La aplicación ya no podrá acceder ni buscar contenido de tu cuenta
+              de{" "}
+              <Text className="!font-bold">{sourceMetadata.displayName}</Text>.
             </Text>
             <Text>
               You can still continue existing sessions referencing{" "}
@@ -1682,8 +1685,7 @@ function ConnectorsSettings() {
               </Text>
               <Text mainContentBody text03 as="p">
                 Open bilingual docs with prerequisites, scopes, setup steps,
-                verification, and troubleshooting for every supported
-                connector.
+                verification, and troubleshooting for every supported connector.
               </Text>
             </Section>
             <Button href="/connectors/docs" target="_blank">
