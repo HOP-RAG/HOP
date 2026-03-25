@@ -24,7 +24,13 @@ from onyx.connectors.google_utils.google_auth import sanitize_oauth_credentials
 from onyx.connectors.google_utils.resources import get_drive_service
 from onyx.connectors.google_utils.resources import get_gmail_service
 from onyx.connectors.google_utils.shared_constants import (
+    CUSTOMER_MANAGED_GOOGLE_AUTH_METHODS,
+)
+from onyx.connectors.google_utils.shared_constants import (
     DB_CREDENTIALS_AUTHENTICATION_METHOD,
+)
+from onyx.connectors.google_utils.shared_constants import (
+    DB_CREDENTIALS_DICT_SERVICE_ACCOUNT_KEY,
 )
 from onyx.connectors.google_utils.shared_constants import (
     DB_CREDENTIALS_DICT_TOKEN_KEY,
@@ -35,6 +41,9 @@ from onyx.connectors.google_utils.shared_constants import (
 from onyx.connectors.google_utils.shared_constants import GOOGLE_SCOPES
 from onyx.connectors.google_utils.shared_constants import (
     GoogleOAuthAuthenticationMethod,
+)
+from onyx.connectors.google_utils.shared_constants import (
+    PLATFORM_MANAGED_GOOGLE_AUTH_METHODS,
 )
 from onyx.connectors.interfaces import OAuthConnector
 from onyx.db.enums import ConnectorCredentialType
@@ -97,12 +106,24 @@ class ConnectorAccountAdapter(ABC):
     def additional_kwargs_model(self) -> type[BaseModel]:
         return EmptyOauthKwargs
 
+    def supports_custom_oauth_client(self) -> bool:
+        return False
+
+    def supported_auth_modes(self) -> list[str]:
+        modes: list[str] = []
+        if self.oauth_enabled():
+            modes.append(GoogleOAuthAuthenticationMethod.PLATFORM_OAUTH.value)
+        if self.supports_custom_oauth_client():
+            modes.append(GoogleOAuthAuthenticationMethod.CUSTOMER_OAUTH.value)
+        return modes
+
     @abstractmethod
     def oauth_authorization_url(
         self,
         base_domain: str,
         state: str,
         additional_kwargs: dict[str, str],
+        oauth_client_override: dict[str, str] | None = None,
     ) -> str:
         raise NotImplementedError
 
@@ -112,6 +133,7 @@ class ConnectorAccountAdapter(ABC):
         base_domain: str,
         code: str,
         additional_kwargs: dict[str, str],
+        oauth_client_override: dict[str, str] | None = None,
     ) -> OAuthCredentialExchangeResult:
         raise NotImplementedError
 
@@ -130,6 +152,13 @@ class ConnectorAccountAdapter(ABC):
     def supports_reconnect(self, credential_type: ConnectorCredentialType) -> bool:
         return self.oauth_enabled() and credential_type == ConnectorCredentialType.OAUTH
 
+    def supports_reconnect_credential(
+        self,
+        credential_type: ConnectorCredentialType,
+        credential_json: dict[str, Any] | None,
+    ) -> bool:
+        return self.supports_reconnect(credential_type)
+
     def infer_existing_credential_account(
         self,
         credential_json: dict[str, Any],
@@ -139,6 +168,12 @@ class ConnectorAccountAdapter(ABC):
             credential_type=ConnectorCredentialType.CUSTOM,
             display_name=credential_name,
         )
+
+    def oauth_client_override_from_credential(
+        self,
+        credential_json: dict[str, Any],
+    ) -> dict[str, str] | None:
+        return None
 
 
 class StandardOAuthConnectorAdapter(ConnectorAccountAdapter):
@@ -156,6 +191,7 @@ class StandardOAuthConnectorAdapter(ConnectorAccountAdapter):
         base_domain: str,
         state: str,
         additional_kwargs: dict[str, str],
+        oauth_client_override: dict[str, str] | None = None,  # noqa: ARG002
     ) -> str:
         return self._connector_cls.oauth_authorization_url(
             base_domain, state, additional_kwargs
@@ -166,6 +202,7 @@ class StandardOAuthConnectorAdapter(ConnectorAccountAdapter):
         base_domain: str,
         code: str,
         additional_kwargs: dict[str, str],
+        oauth_client_override: dict[str, str] | None = None,  # noqa: ARG002
     ) -> OAuthCredentialExchangeResult:
         token_info = self._connector_cls.oauth_code_to_token(
             base_domain, code, additional_kwargs
@@ -190,8 +227,112 @@ class GoogleWorkspaceOAuthAdapter(ConnectorAccountAdapter):
     def source(self) -> DocumentSource:
         return self._source
 
+    def oauth_enabled(self) -> bool:
+        return bool(
+            OAUTH_GOOGLE_DRIVE_CLIENT_ID and OAUTH_GOOGLE_DRIVE_CLIENT_SECRET
+        )
+
+    def supports_custom_oauth_client(self) -> bool:
+        return True
+
+    def supported_auth_modes(self) -> list[str]:
+        modes: list[str] = []
+        if self.oauth_enabled():
+            modes.append(GoogleOAuthAuthenticationMethod.PLATFORM_OAUTH.value)
+        modes.append(GoogleOAuthAuthenticationMethod.CUSTOMER_OAUTH.value)
+        modes.append(GoogleOAuthAuthenticationMethod.SERVICE_ACCOUNT_JSON.value)
+        return modes
+
     def _callback_uri(self, base_domain: str) -> str:
         return get_oauth_callback_uri(base_domain, self.source().value)
+
+    def _resolve_oauth_client(
+        self,
+        oauth_client_override: dict[str, str] | None,
+    ) -> tuple[str, str, str]:
+        if oauth_client_override:
+            client_id = oauth_client_override.get("client_id")
+            client_secret = oauth_client_override.get("client_secret")
+            if not client_id or not client_secret:
+                raise ValueError("Customer-managed OAuth requires client ID and secret.")
+            return (
+                client_id,
+                client_secret,
+                GoogleOAuthAuthenticationMethod.CUSTOMER_OAUTH.value,
+            )
+
+        if not OAUTH_GOOGLE_DRIVE_CLIENT_ID or not OAUTH_GOOGLE_DRIVE_CLIENT_SECRET:
+            raise ValueError(
+                "Google Workspace OAuth credentials are not configured on the server."
+            )
+
+        return (
+            OAUTH_GOOGLE_DRIVE_CLIENT_ID,
+            OAUTH_GOOGLE_DRIVE_CLIENT_SECRET,
+            GoogleOAuthAuthenticationMethod.PLATFORM_OAUTH.value,
+        )
+
+    def _extract_token_metadata(
+        self,
+        credential_json: dict[str, Any],
+    ) -> dict[str, Any]:
+        token_json_str = cast(
+            str | None, credential_json.get(DB_CREDENTIALS_DICT_TOKEN_KEY)
+        )
+        if not token_json_str:
+            return {}
+
+        try:
+            token_payload = json.loads(token_json_str)
+        except (TypeError, ValueError):
+            return {}
+
+        token_metadata: dict[str, Any] = {
+            "scopes": token_payload.get("scopes") or GOOGLE_SCOPES[self.source()],
+        }
+        if token_payload.get("expiry"):
+            token_metadata["token_expiry"] = token_payload["expiry"]
+
+        return token_metadata
+
+    def _resolve_auth_method(self, credential_json: dict[str, Any]) -> str:
+        if DB_CREDENTIALS_DICT_SERVICE_ACCOUNT_KEY in credential_json:
+            return GoogleOAuthAuthenticationMethod.SERVICE_ACCOUNT_JSON.value
+
+        authentication_method = cast(
+            str | None,
+            credential_json.get(DB_CREDENTIALS_AUTHENTICATION_METHOD),
+        )
+        if authentication_method in PLATFORM_MANAGED_GOOGLE_AUTH_METHODS:
+            return GoogleOAuthAuthenticationMethod.PLATFORM_OAUTH.value
+        if authentication_method in CUSTOMER_MANAGED_GOOGLE_AUTH_METHODS:
+            return GoogleOAuthAuthenticationMethod.CUSTOMER_OAUTH.value
+
+        token_json_str = cast(
+            str | None, credential_json.get(DB_CREDENTIALS_DICT_TOKEN_KEY)
+        )
+        if token_json_str:
+            try:
+                token_payload = json.loads(token_json_str)
+            except (TypeError, ValueError):
+                token_payload = {}
+
+            if token_payload.get("client_id") and token_payload.get("client_secret"):
+                return GoogleOAuthAuthenticationMethod.CUSTOMER_OAUTH.value
+            return GoogleOAuthAuthenticationMethod.PLATFORM_OAUTH.value
+
+        return "custom"
+
+    def _build_provider_metadata(
+        self,
+        credential_json: dict[str, Any],
+    ) -> dict[str, Any]:
+        return {
+            "provider": "google",
+            "source": self.source().value,
+            "auth_method": self._resolve_auth_method(credential_json),
+            **self._extract_token_metadata(credential_json),
+        }
 
     def _get_account_email(self, creds: GoogleOAuthCredentials) -> str:
         if self.source() == DocumentSource.GOOGLE_DRIVE:
@@ -210,15 +351,13 @@ class GoogleWorkspaceOAuthAdapter(ConnectorAccountAdapter):
         base_domain: str,
         state: str,
         additional_kwargs: dict[str, str],  # noqa: ARG002
+        oauth_client_override: dict[str, str] | None = None,
     ) -> str:
-        if not OAUTH_GOOGLE_DRIVE_CLIENT_ID or not OAUTH_GOOGLE_DRIVE_CLIENT_SECRET:
-            raise ValueError(
-                "Google Workspace OAuth credentials are not configured on the server."
-            )
+        client_id, _, _ = self._resolve_oauth_client(oauth_client_override)
 
         query = urlencode(
             {
-                "client_id": OAUTH_GOOGLE_DRIVE_CLIENT_ID,
+                "client_id": client_id,
                 "redirect_uri": self._callback_uri(base_domain),
                 "response_type": "code",
                 "scope": " ".join(GOOGLE_SCOPES[self.source()]),
@@ -234,13 +373,17 @@ class GoogleWorkspaceOAuthAdapter(ConnectorAccountAdapter):
         base_domain: str,
         code: str,
         additional_kwargs: dict[str, str],  # noqa: ARG002
+        oauth_client_override: dict[str, str] | None = None,
     ) -> OAuthCredentialExchangeResult:
+        client_id, client_secret, auth_method = self._resolve_oauth_client(
+            oauth_client_override
+        )
         response = requests.post(
             _GOOGLE_TOKEN_URL,
             headers={"Content-Type": "application/x-www-form-urlencoded"},
             data={
-                "client_id": OAUTH_GOOGLE_DRIVE_CLIENT_ID,
-                "client_secret": OAUTH_GOOGLE_DRIVE_CLIENT_SECRET,
+                "client_id": client_id,
+                "client_secret": client_secret,
                 "code": code,
                 "redirect_uri": self._callback_uri(base_domain),
                 "grant_type": "authorization_code",
@@ -257,8 +400,8 @@ class GoogleWorkspaceOAuthAdapter(ConnectorAccountAdapter):
             )
 
         authorized_user_info = {
-            "client_id": OAUTH_GOOGLE_DRIVE_CLIENT_ID,
-            "client_secret": OAUTH_GOOGLE_DRIVE_CLIENT_SECRET,
+            "client_id": client_id,
+            "client_secret": client_secret,
             "refresh_token": refresh_token,
         }
         oauth_creds = get_google_oauth_creds(
@@ -270,21 +413,30 @@ class GoogleWorkspaceOAuthAdapter(ConnectorAccountAdapter):
 
         account_email = self._get_account_email(oauth_creds)
         source_name = self.source().value.replace("_", " ").title()
+        stored_token_json = (
+            sanitize_oauth_credentials(oauth_creds)
+            if auth_method == GoogleOAuthAuthenticationMethod.PLATFORM_OAUTH.value
+            else oauth_creds.to_json()
+        )
 
         return OAuthCredentialExchangeResult(
             credential_json={
-                DB_CREDENTIALS_DICT_TOKEN_KEY: sanitize_oauth_credentials(oauth_creds),
+                DB_CREDENTIALS_DICT_TOKEN_KEY: stored_token_json,
                 DB_CREDENTIALS_PRIMARY_ADMIN_KEY: account_email,
-                DB_CREDENTIALS_AUTHENTICATION_METHOD: (
-                    GoogleOAuthAuthenticationMethod.OAUTH_INTERACTIVE.value
-                ),
+                DB_CREDENTIALS_AUTHENTICATION_METHOD: auth_method,
             },
             credential_name=f"{source_name} OAuth",
             credential_type=ConnectorCredentialType.OAUTH,
             display_name=account_email,
             external_account_id=account_email,
             external_account_email=account_email,
-            provider_metadata={},
+            provider_metadata=self._build_provider_metadata(
+                {
+                    DB_CREDENTIALS_DICT_TOKEN_KEY: stored_token_json,
+                    DB_CREDENTIALS_PRIMARY_ADMIN_KEY: account_email,
+                    DB_CREDENTIALS_AUTHENTICATION_METHOD: auth_method,
+                }
+            ),
         )
 
     def health_check(
@@ -348,19 +500,72 @@ class GoogleWorkspaceOAuthAdapter(ConnectorAccountAdapter):
             display_name=display_name,
             external_account_id=display_name,
             external_account_email=display_name,
-            provider_metadata={},
+            provider_metadata=self._build_provider_metadata(credential_json),
         )
+
+    def oauth_client_override_from_credential(
+        self,
+        credential_json: dict[str, Any],
+    ) -> dict[str, str] | None:
+        if (
+            self._resolve_auth_method(credential_json)
+            != GoogleOAuthAuthenticationMethod.CUSTOMER_OAUTH.value
+        ):
+            return None
+
+        token_json_str = cast(
+            str | None, credential_json.get(DB_CREDENTIALS_DICT_TOKEN_KEY)
+        )
+        if not token_json_str:
+            return None
+
+        try:
+            token_payload = json.loads(token_json_str)
+        except (TypeError, ValueError):
+            return None
+
+        client_id = cast(str | None, token_payload.get("client_id"))
+        client_secret = cast(str | None, token_payload.get("client_secret"))
+        if not client_id or not client_secret:
+            return None
+
+        return {
+            "client_id": client_id,
+            "client_secret": client_secret,
+        }
+
+    def supports_reconnect_credential(
+        self,
+        credential_type: ConnectorCredentialType,
+        credential_json: dict[str, Any] | None,
+    ) -> bool:
+        if credential_type != ConnectorCredentialType.OAUTH:
+            return False
+        if credential_json is None:
+            return self.oauth_enabled()
+
+        if (
+            self._resolve_auth_method(credential_json)
+            == GoogleOAuthAuthenticationMethod.CUSTOMER_OAUTH.value
+        ):
+            return self.oauth_client_override_from_credential(credential_json) is not None
+
+        return self.oauth_enabled()
 
 
 class SlackOAuthAdapter(ConnectorAccountAdapter):
     def source(self) -> DocumentSource:
         return DocumentSource.SLACK
 
+    def oauth_enabled(self) -> bool:
+        return bool(OAUTH_SLACK_CLIENT_ID and OAUTH_SLACK_CLIENT_SECRET)
+
     def oauth_authorization_url(
         self,
         base_domain: str,
         state: str,
         additional_kwargs: dict[str, str],  # noqa: ARG002
+        oauth_client_override: dict[str, str] | None = None,  # noqa: ARG002
     ) -> str:
         if not OAUTH_SLACK_CLIENT_ID or not OAUTH_SLACK_CLIENT_SECRET:
             raise ValueError("Slack OAuth credentials are not configured on the server.")
@@ -380,6 +585,7 @@ class SlackOAuthAdapter(ConnectorAccountAdapter):
         base_domain: str,
         code: str,
         additional_kwargs: dict[str, str],  # noqa: ARG002
+        oauth_client_override: dict[str, str] | None = None,  # noqa: ARG002
     ) -> OAuthCredentialExchangeResult:
         response = requests.post(
             _SLACK_TOKEN_URL,

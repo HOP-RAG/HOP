@@ -26,6 +26,9 @@ from onyx.connectors.google_utils.shared_constants import (
 from onyx.connectors.google_utils.shared_constants import (
     GoogleOAuthAuthenticationMethod,
 )
+from onyx.connectors.google_utils.shared_constants import (
+    PLATFORM_MANAGED_GOOGLE_AUTH_METHODS,
+)
 from onyx.utils.logger import setup_logger
 
 logger = setup_logger()
@@ -109,11 +112,8 @@ def get_google_creds(
         # only send what get_google_oauth_creds needs
         authorized_user_info = {}
 
-        # oauth_interactive is sanitized and needs credentials from the environment
-        if (
-            authentication_method
-            == GoogleOAuthAuthenticationMethod.OAUTH_INTERACTIVE.value
-        ):
+        # Platform-managed OAuth is sanitized and needs credentials from the environment.
+        if authentication_method in PLATFORM_MANAGED_GOOGLE_AUTH_METHODS:
             authorized_user_info["client_id"] = OAUTH_GOOGLE_DRIVE_CLIENT_ID
             authorized_user_info["client_secret"] = OAUTH_GOOGLE_DRIVE_CLIENT_SECRET
         else:
@@ -133,11 +133,8 @@ def get_google_creds(
         # tell caller to update token stored in DB if the refresh token changed
         if oauth_creds:
             if oauth_creds.refresh_token != authorized_user_info["refresh_token"]:
-                # if oauth_interactive, sanitize the credentials so they don't get stored in the db
-                if (
-                    authentication_method
-                    == GoogleOAuthAuthenticationMethod.OAUTH_INTERACTIVE.value
-                ):
+                # Platform-managed OAuth reuses the server-side client config.
+                if authentication_method in PLATFORM_MANAGED_GOOGLE_AUTH_METHODS:
                     oauth_creds_json_str = sanitize_oauth_credentials(oauth_creds)
                 else:
                     oauth_creds_json_str = oauth_creds.to_json()

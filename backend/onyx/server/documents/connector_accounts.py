@@ -62,6 +62,8 @@ _OAUTH_STATE_EXPIRATION_SECONDS = 10 * 60
 _DESIRED_RETURN_URL_KEY = "desired_return_url"
 _ADDITIONAL_KWARGS_KEY = "additional_kwargs"
 _RECONNECT_ACCOUNT_ID_KEY = "reconnect_account_id"
+_AUTH_MODE_KEY = "auth_mode"
+_OAUTH_CLIENT_OVERRIDE_KEY = "oauth_client_override"
 
 
 class OAuthAdditionalKwargDescription(BaseModel):
@@ -72,6 +74,18 @@ class OAuthAdditionalKwargDescription(BaseModel):
 
 class OAuthStartResponse(BaseModel):
     url: str
+
+
+class OAuthClientConfig(BaseModel):
+    client_id: str
+    client_secret: str
+
+
+class OAuthStartRequest(BaseModel):
+    desired_return_url: str | None = None
+    additional_kwargs: dict[str, str] = Field(default_factory=dict)
+    auth_mode: str = "platform_oauth"
+    oauth_client: OAuthClientConfig | None = None
 
 
 class ConnectorAccountSnapshot(BaseModel):
@@ -98,6 +112,7 @@ class ConnectorAccountSnapshot(BaseModel):
 class ConnectorProviderStatusResponse(BaseModel):
     source: DocumentSource
     oauth_enabled: bool
+    available_auth_modes: list[str]
     additional_kwargs: list[OAuthAdditionalKwargDescription]
     accounts: list[ConnectorAccountSnapshot]
 
@@ -160,21 +175,60 @@ def _additional_kwarg_descriptions(source: DocumentSource) -> list[OAuthAddition
     return descriptions
 
 
+def _validated_additional_kwargs_dict(
+    additional_kwargs: dict[str, str],
+    source: DocumentSource,
+) -> dict[str, str]:
+    adapter = get_connector_account_adapter(source)
+    if not adapter:
+        return {}
+
+    try:
+        adapter.additional_kwargs_model()(**additional_kwargs)
+    except ValidationError as e:
+        raise OnyxError(OnyxErrorCode.VALIDATION_ERROR, str(e)) from e
+
+    return additional_kwargs
+
+
 def _build_oauth_start_response(
-    request: Request,
     source: DocumentSource,
     desired_return_url: str | None,
     account_id: int | None,
+    additional_kwargs: dict[str, str],
+    auth_mode: str,
+    oauth_client_override: dict[str, str] | None = None,
 ) -> OAuthStartResponse:
     adapter = get_connector_account_adapter(source)
-    if not adapter or not adapter.oauth_enabled():
+    if not adapter:
+        raise OnyxError(
+            OnyxErrorCode.NOT_FOUND,
+            f"OAuth adapter for {source.value} was not found.",
+        )
+
+    validated_additional_kwargs = _validated_additional_kwargs_dict(
+        additional_kwargs=additional_kwargs,
+        source=source,
+    )
+
+    if auth_mode == "platform_oauth" and not adapter.oauth_enabled():
         raise OnyxError(
             OnyxErrorCode.NOT_IMPLEMENTED,
             f"OAuth is not enabled for {source.value}.",
         )
+    if auth_mode == "customer_oauth":
+        if not adapter.supports_custom_oauth_client():
+            raise OnyxError(
+                OnyxErrorCode.NOT_IMPLEMENTED,
+                f"Customer-managed OAuth is not supported for {source.value}.",
+            )
+        if oauth_client_override is None:
+            raise OnyxError(
+                OnyxErrorCode.VALIDATION_ERROR,
+                "Customer-managed OAuth requires a client ID and client secret.",
+            )
 
     tenant_id = get_current_tenant_id()
-    additional_kwargs = _validated_additional_kwargs(request, source)
     state = str(uuid4())
     return_url = desired_return_url or f"{WEB_DOMAIN}/admin/connectors/{source.value}"
 
@@ -183,8 +237,10 @@ def _build_oauth_start_response(
         state=state,
         payload={
             _DESIRED_RETURN_URL_KEY: return_url,
-            _ADDITIONAL_KWARGS_KEY: additional_kwargs,
+            _ADDITIONAL_KWARGS_KEY: validated_additional_kwargs,
             _RECONNECT_ACCOUNT_ID_KEY: account_id,
+            _AUTH_MODE_KEY: auth_mode,
+            _OAUTH_CLIENT_OVERRIDE_KEY: oauth_client_override,
         },
     )
 
@@ -192,7 +248,8 @@ def _build_oauth_start_response(
         oauth_url = adapter.oauth_authorization_url(
             base_domain=WEB_DOMAIN,
             state=state,
-            additional_kwargs=additional_kwargs,
+            additional_kwargs=validated_additional_kwargs,
+            oauth_client_override=oauth_client_override,
         )
     except Exception as e:
         raise OnyxError(OnyxErrorCode.INVALID_INPUT, str(e)) from e
@@ -206,22 +263,12 @@ def _validated_additional_kwargs(
     request: Request,
     source: DocumentSource,
 ) -> dict[str, str]:
-    adapter = get_connector_account_adapter(source)
-    if not adapter:
-        return {}
-
     additional_kwargs = {
         key: value
         for key, value in request.query_params.items()
         if key not in {"desired_return_url", "account_id"}
     }
-
-    try:
-        adapter.additional_kwargs_model()(**additional_kwargs)
-    except ValidationError as e:
-        raise OnyxError(OnyxErrorCode.VALIDATION_ERROR, str(e)) from e
-
-    return additional_kwargs
+    return _validated_additional_kwargs_dict(additional_kwargs, source)
 
 
 def _load_oauth_state(
@@ -365,6 +412,20 @@ def _resolve_account_snapshot(
             account.status = ConnectorAccountStatus.CONNECTED
             account.last_error = None
 
+        inferred_account = adapter.infer_existing_credential_account(
+            credential_json=credential_json,
+            credential_name=account.credential.name,
+        )
+        account.credential_type = inferred_account.credential_type
+        if account.name is None and inferred_account.display_name:
+            account.name = inferred_account.display_name
+        if inferred_account.external_account_id:
+            account.external_account_id = inferred_account.external_account_id
+        if inferred_account.external_account_email:
+            account.external_account_email = inferred_account.external_account_email
+        if inferred_account.provider_metadata:
+            account.account_metadata = inferred_account.provider_metadata
+
     linked_cc_pairs = _linked_cc_pairs_for_account(db_session, account)
     linked_connector_count = len({cc_pair.connector_id for cc_pair in linked_cc_pairs})
 
@@ -406,6 +467,11 @@ def _resolve_account_snapshot(
         if account.credential
         else None
     )
+    reconnect_credential_json = (
+        account.credential.credential_json.get_value(apply_mask=False)
+        if account.credential and account.credential.credential_json
+        else None
+    )
 
     return ConnectorAccountSnapshot(
         id=account.id,
@@ -423,7 +489,10 @@ def _resolve_account_snapshot(
         last_sync_status=latest_sync_status,
         linked_connector_count=linked_connector_count,
         can_disconnect=adapter.supports_disconnect(account.credential_type),
-        can_reconnect=adapter.supports_reconnect(account.credential_type),
+        can_reconnect=adapter.supports_reconnect_credential(
+            account.credential_type,
+            reconnect_credential_json,
+        ),
         can_sync=linked_connector_count > 0
         and resolved_status
         in {ConnectorAccountStatus.CONNECTED, ConnectorAccountStatus.SYNCING},
@@ -486,10 +555,31 @@ def start_connector_oauth(
     _: User = Depends(current_curator_or_admin_user),
 ) -> OAuthStartResponse:
     return _build_oauth_start_response(
-        request=request,
         source=source,
         desired_return_url=desired_return_url,
         account_id=account_id,
+        additional_kwargs=_validated_additional_kwargs(request, source),
+        auth_mode="platform_oauth",
+    )
+
+
+@router.post("/{source}/oauth/start")
+def start_connector_oauth_with_custom_client(
+    source: DocumentSource,
+    request_body: OAuthStartRequest,
+    _: User = Depends(current_curator_or_admin_user),
+) -> OAuthStartResponse:
+    return _build_oauth_start_response(
+        source=source,
+        desired_return_url=request_body.desired_return_url,
+        account_id=None,
+        additional_kwargs=request_body.additional_kwargs,
+        auth_mode=request_body.auth_mode,
+        oauth_client_override=(
+            request_body.oauth_client.model_dump()
+            if request_body.oauth_client is not None
+            else None
+        ),
     )
 
 
@@ -515,6 +605,7 @@ def complete_connector_oauth(
     )
     additional_kwargs = oauth_state.get(_ADDITIONAL_KWARGS_KEY, {})
     reconnect_account_id = oauth_state.get(_RECONNECT_ACCOUNT_ID_KEY)
+    oauth_client_override = oauth_state.get(_OAUTH_CLIENT_OVERRIDE_KEY)
 
     try:
         try:
@@ -522,6 +613,7 @@ def complete_connector_oauth(
                 base_domain=WEB_DOMAIN,
                 code=code,
                 additional_kwargs=additional_kwargs,
+                oauth_client_override=oauth_client_override,
             )
         except Exception as e:
             raise OnyxError(OnyxErrorCode.BAD_GATEWAY, str(e)) from e
@@ -623,6 +715,7 @@ def get_connector_provider_status(
     return ConnectorProviderStatusResponse(
         source=source,
         oauth_enabled=adapter is not None and adapter.oauth_enabled(),
+        available_auth_modes=adapter.supported_auth_modes() if adapter else [],
         additional_kwargs=_additional_kwarg_descriptions(source),
         accounts=snapshots,
     )
@@ -655,17 +748,34 @@ def reconnect_connector_provider(
             f"Connector account {account_id} was not found.",
         )
 
-    if not adapter.supports_reconnect(account.credential_type):
+    credential_json = (
+        account.credential.credential_json.get_value(apply_mask=False)
+        if account.credential and account.credential.credential_json
+        else {}
+    )
+    if not adapter.supports_reconnect_credential(
+        account.credential_type,
+        credential_json,
+    ):
         raise OnyxError(
             OnyxErrorCode.INVALID_INPUT,
             f"{source.value} does not support OAuth reconnect for this account.",
         )
 
+    oauth_client_override = adapter.oauth_client_override_from_credential(
+        credential_json
+    )
+    auth_mode = (
+        "customer_oauth" if oauth_client_override is not None else "platform_oauth"
+    )
+
     return _build_oauth_start_response(
-        request=request,
         source=source,
         desired_return_url=desired_return_url,
         account_id=account_id,
+        additional_kwargs=_validated_additional_kwargs(request, source),
+        auth_mode=auth_mode,
+        oauth_client_override=oauth_client_override,
     )
 
 

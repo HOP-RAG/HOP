@@ -149,7 +149,7 @@ def build_service_account_creds(
         credential_dict[DB_CREDENTIALS_PRIMARY_ADMIN_KEY] = primary_admin_email
 
     credential_dict[DB_CREDENTIALS_AUTHENTICATION_METHOD] = (
-        GoogleOAuthAuthenticationMethod.UPLOADED.value
+        GoogleOAuthAuthenticationMethod.SERVICE_ACCOUNT_JSON.value
     )
 
     return CredentialBase(

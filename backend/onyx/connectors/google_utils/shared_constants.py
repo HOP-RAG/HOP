@@ -27,15 +27,30 @@ DB_CREDENTIALS_PRIMARY_ADMIN_KEY = "google_primary_admin"
 
 # https://developers.google.com/workspace/guides/create-credentials
 # Internally defined authentication method type.
-# The value must be one of "oauth_interactive" or "uploaded"
-# Used to disambiguate whether credentials have already been created via
-# certain methods and what actions we allow users to take
+# New values distinguish platform-managed OAuth from customer-managed OAuth.
+# Legacy values are kept for backwards compatibility with existing credentials.
 DB_CREDENTIALS_AUTHENTICATION_METHOD = "authentication_method"
 
 
 class GoogleOAuthAuthenticationMethod(str, PyEnum):
+    PLATFORM_OAUTH = "platform_oauth"
+    CUSTOMER_OAUTH = "customer_oauth"
+    SERVICE_ACCOUNT_JSON = "service_account_json"
+
+    # Legacy values - keep reading these for backwards compatibility.
     OAUTH_INTERACTIVE = "oauth_interactive"
     UPLOADED = "uploaded"
+
+
+PLATFORM_MANAGED_GOOGLE_AUTH_METHODS = {
+    GoogleOAuthAuthenticationMethod.PLATFORM_OAUTH.value,
+    GoogleOAuthAuthenticationMethod.OAUTH_INTERACTIVE.value,
+}
+
+CUSTOMER_MANAGED_GOOGLE_AUTH_METHODS = {
+    GoogleOAuthAuthenticationMethod.CUSTOMER_OAUTH.value,
+    GoogleOAuthAuthenticationMethod.UPLOADED.value,
+}
 
 
 USER_FIELDS = "nextPageToken, users(primaryEmail)"
