@@ -7,8 +7,19 @@ import { NextRequest, NextResponse } from "next/server";
 export async function GET(request: NextRequest) {
   try {
     const backendUrl = new URL(INTERNAL_URL);
-    // Copy path and query parameters from incoming request
-    backendUrl.pathname = request.nextUrl.pathname;
+    const source = request.nextUrl.pathname.split("/").pop();
+    if (!source) {
+      return NextResponse.json(
+        { message: "Missing connector source in OAuth callback." },
+        { status: 400 }
+      );
+    }
+
+    const backendBasePath =
+      backendUrl.pathname === "/"
+        ? ""
+        : backendUrl.pathname.replace(/\/$/, "");
+    backendUrl.pathname = `${backendBasePath}/manage/connectors/${source}/oauth/callback`;
     backendUrl.search = request.nextUrl.search;
 
     const response = await fetch(backendUrl, {

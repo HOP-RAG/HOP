@@ -49,7 +49,9 @@ export function CreateStdOAuthCredential({
     <Formik
       initialValues={
         {
-          ...Object.fromEntries(additionalFields.map((field) => [field, ""])),
+          ...Object.fromEntries(
+            additionalFields.map((field) => [field.name, ""])
+          ),
         } as formType
       }
       validationSchema={Yup.object().shape({

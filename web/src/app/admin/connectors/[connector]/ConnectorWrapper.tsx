@@ -31,6 +31,10 @@ export default function ConnectorWrapper({
   const mode = searchParams?.get("mode"); // 'federated' or 'regular'
 
   useToastFromQuery({
+    "connector-account-connected": {
+      message: "Connection completed. You can continue configuring the connector.",
+      type: "success",
+    },
     oauth_failed: {
       message: "OAuth authentication failed. Please try again.",
       type: "error",
