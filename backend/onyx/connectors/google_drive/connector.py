@@ -1857,7 +1857,9 @@ def get_credentials_from_env(email: str, oauth: bool) -> dict:
     return {
         cred_key: refried_credential_string,
         DB_CREDENTIALS_PRIMARY_ADMIN_KEY: email,
-        DB_CREDENTIALS_AUTHENTICATION_METHOD: "uploaded",
+        DB_CREDENTIALS_AUTHENTICATION_METHOD: (
+            "uploaded" if oauth else "service_account_json"
+        ),
     }
 
 
