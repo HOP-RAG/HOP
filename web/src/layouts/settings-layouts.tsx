@@ -176,6 +176,8 @@ export interface SettingsHeaderProps {
   backButton?: boolean;
   onBack?: () => void;
   separator?: boolean;
+  className?: string;
+  contentClassName?: string;
 }
 function SettingsHeader({
   icon: Icon,
@@ -186,6 +188,8 @@ function SettingsHeader({
   backButton,
   onBack,
   separator,
+  className,
+  contentClassName,
 }: SettingsHeaderProps) {
   const [showShadow, setShowShadow] = useState(false);
   const headerRef = useRef<HTMLDivElement>(null);
@@ -221,7 +225,8 @@ function SettingsHeader({
       className={cn(
         "settings-layout-header w-full bg-background-tint-01",
         isSticky && "sticky top-0 z-settings-header",
-        backButton && "md:pt-4"
+        backButton && "md:pt-4",
+        className
       )}
     >
       {backButton && (
@@ -232,7 +237,7 @@ function SettingsHeader({
 
       <Spacer vertical rem={2.5} />
 
-      <div className="flex flex-col gap-6 px-4">
+      <div className={cn("flex flex-col gap-6 px-4", contentClassName)}>
         <div className="flex w-full justify-between">
           <div aria-label="admin-page-title">
             <Content
