@@ -425,6 +425,8 @@ export default function AgentsNavigationPage() {
         icon={SvgOnyxOctagon}
         title="Agents"
         description="Customize AI behavior and knowledge for you and your team's use cases."
+        className="bg-transparent"
+        contentClassName="rounded-24 border border-border-01 bg-[linear-gradient(135deg,var(--background-neutral-00)_0%,var(--background-tint-02)_100%)] px-6 py-6 shadow-[0_20px_50px_-38px_var(--mask-04)]"
         rightChildren={
           <Button
             href="/app/agents/create"
