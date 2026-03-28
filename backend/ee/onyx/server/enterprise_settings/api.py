@@ -127,11 +127,6 @@ def admin_ee_put_settings(
 
 @basic_router.get("")
 def ee_fetch_settings() -> EnterpriseSettings:
-    if MULTI_TENANT:
-        tenant_id = get_current_tenant_id()
-        if not tenant_id or tenant_id == POSTGRES_DEFAULT_SCHEMA:
-            raise BasicAuthenticationError(detail="User must authenticate")
-
     return load_settings()
 
 

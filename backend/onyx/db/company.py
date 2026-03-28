@@ -109,7 +109,7 @@ def _get_company_user_rows(
         users = list(
             tenant_session.scalars(
                 select(User).where(func.lower(User.email).in_(lower_emails))
-            ).all()
+            ).unique().all()
         )
 
     users_by_email = {user.email.lower(): user for user in users}

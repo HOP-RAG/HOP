@@ -9,6 +9,10 @@ import type {
 const BASE_URL = "/api/admin/companies";
 export const COMPANIES_FETCH_URL = `${BASE_URL}?page_num=0&page_size=250`;
 
+const PLATFORM_HEADERS: HeadersInit = {
+  Authorization: `Bearer ${process.env.NEXT_PUBLIC_PLATFORM_ADMIN_API_KEY ?? "api_key"}`,
+};
+
 async function parseErrorDetail(
   response: Response,
   fallback: string
@@ -35,7 +39,9 @@ async function readJsonOrThrow<T>(
 export async function fetchCompanies(): Promise<
   PaginatedResponse<CompanySnapshot>
 > {
-  const response = await fetch(COMPANIES_FETCH_URL);
+  const response = await fetch(COMPANIES_FETCH_URL, {
+    headers: PLATFORM_HEADERS,
+  });
   return readJsonOrThrow(response, "Failed to load companies");
 }
 
@@ -44,7 +50,7 @@ export async function createCompany(
 ): Promise<CompanyDetail> {
   const response = await fetch(BASE_URL, {
     method: "POST",
-    headers: { "Content-Type": "application/json" },
+    headers: { "Content-Type": "application/json", ...PLATFORM_HEADERS },
     body: JSON.stringify(payload),
   });
 
@@ -52,7 +58,9 @@ export async function createCompany(
 }
 
 export async function fetchCompany(companyId: string): Promise<CompanyDetail> {
-  const response = await fetch(`${BASE_URL}/${companyId}`);
+  const response = await fetch(`${BASE_URL}/${companyId}`, {
+    headers: PLATFORM_HEADERS,
+  });
   return readJsonOrThrow(response, "Failed to load company");
 }
 
@@ -62,7 +70,7 @@ export async function updateCompany(
 ): Promise<CompanySnapshot> {
   const response = await fetch(`${BASE_URL}/${companyId}`, {
     method: "PATCH",
-    headers: { "Content-Type": "application/json" },
+    headers: { "Content-Type": "application/json", ...PLATFORM_HEADERS },
     body: JSON.stringify(payload),
   });
 
@@ -75,7 +83,7 @@ export async function inviteCompanyAdmin(
 ): Promise<CompanyDetail> {
   const response = await fetch(`${BASE_URL}/${companyId}/invite-admin`, {
     method: "POST",
-    headers: { "Content-Type": "application/json" },
+    headers: { "Content-Type": "application/json", ...PLATFORM_HEADERS },
     body: JSON.stringify({ email }),
   });
 
@@ -87,6 +95,7 @@ export async function activateCompany(
 ): Promise<CompanySnapshot> {
   const response = await fetch(`${BASE_URL}/${companyId}/activate`, {
     method: "POST",
+    headers: PLATFORM_HEADERS,
   });
 
   return readJsonOrThrow(response, "Failed to activate company");
@@ -97,6 +106,7 @@ export async function deactivateCompany(
 ): Promise<CompanySnapshot> {
   const response = await fetch(`${BASE_URL}/${companyId}/deactivate`, {
     method: "POST",
+    headers: PLATFORM_HEADERS,
   });
 
   return readJsonOrThrow(response, "Failed to deactivate company");
