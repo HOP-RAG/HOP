@@ -377,8 +377,6 @@ def get_session() -> Generator[Session, None, None]:
     Has some additional validation, and likely should be merged
     with get_session_with_current_tenant in the future."""
     tenant_id = get_current_tenant_id()
-    if tenant_id == POSTGRES_DEFAULT_SCHEMA and MULTI_TENANT:
-        raise BasicAuthenticationError(detail="User must authenticate")
 
     if not is_valid_schema_name(tenant_id):
         raise HTTPException(status_code=400, detail="Invalid tenant ID")

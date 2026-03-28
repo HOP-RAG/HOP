@@ -19,6 +19,16 @@ depends_on = None
 
 
 def upgrade() -> None:
+    conn = op.get_bind()
+    result = conn.execute(
+        sa.text(
+            "SELECT 1 FROM information_schema.tables "
+            "WHERE table_schema = 'public' AND table_name = 'company'"
+        )
+    )
+    if result.fetchone():
+        return
+
     op.create_table(
         "company",
         sa.Column("id", PGUUID(as_uuid=True), nullable=False),

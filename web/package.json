@@ -6,7 +6,7 @@
     "lib/opal"
   ],
   "scripts": {
-    "dev": "next dev",
+    "dev": "next dev --webpack",
     "dev:profile": "NEXT_PUBLIC_ENABLE_STATS=true next dev",
     "build": "next build",
     "start": "next start",
