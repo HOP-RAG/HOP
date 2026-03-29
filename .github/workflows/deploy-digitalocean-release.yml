@@ -440,6 +440,28 @@ jobs:
           fetch-depth: 0
           fetch-tags: true
 
+      - name: Find previous deployed version
+        id: prev_version
+        run: |
+          CURRENT_VERSION="${{ needs.extract-version.outputs.version }}"
+          echo "[INFO] Current failed version: $CURRENT_VERSION"
+
+          # Find the most recent deployed-* tag that is NOT the current version.
+          # Tags are created by the tag-deployment job on each successful deploy.
+          PREV_TAG=$(git tag --list 'deployed-*' --sort=-version:refname \
+            | grep -v "deployed-${CURRENT_VERSION}$" \
+            | head -n 1)
+
+          if [ -n "$PREV_TAG" ]; then
+            PREV_VERSION="${PREV_TAG#deployed-}"
+            echo "[INFO] Previous successfully deployed version: $PREV_VERSION (tag: $PREV_TAG)"
+          else
+            echo "[WARN] No previous deployed-* tag found. Falling back to main."
+            PREV_VERSION=""
+          fi
+
+          echo "prev_version=$PREV_VERSION" >> "$GITHUB_OUTPUT"
+
       - name: Auto-rollback to previous version
         env:
           DEPLOY_KEY: ${{ secrets.DROPLET_SSH_KEY }}
@@ -450,10 +472,16 @@ jobs:
           PROXY_CONTAINER: hop-proxy
           LEGACY_PROXY_CONTAINER: onyx-proxy
           GHCR_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+          PREV_VERSION: ${{ steps.prev_version.outputs.prev_version }}
         run: |
           set -e
 
           echo "[WARN] Deployment verification failed. Starting automatic rollback..."
+          if [ -n "$PREV_VERSION" ]; then
+            echo "[INFO] Rolling back to previous version: $PREV_VERSION"
+          else
+            echo "[INFO] No previous version found. Rolling back to main."
+          fi
 
           mkdir -p ~/.ssh
           chmod 700 ~/.ssh
@@ -478,12 +506,14 @@ jobs:
             "$LEGACY_DEPLOY_DIR" \
             "$PROXY_CONTAINER" \
             "$LEGACY_PROXY_CONTAINER" \
-            "$GHCR_TOKEN" <<'EOSSH'
+            "$GHCR_TOKEN" \
+            "$PREV_VERSION" <<'EOSSH'
             PREFERRED_DEPLOY_DIR="$1"
             LEGACY_DEPLOY_DIR="$2"
             PROXY_CONTAINER="$3"
             LEGACY_PROXY_CONTAINER="$4"
             GHCR_TOKEN="$5"
+            PREV_VERSION="$6"
             set -e
 
             if [ -d "$PREFERRED_DEPLOY_DIR" ]; then
@@ -500,8 +530,20 @@ jobs:
             echo "[INFO] Current state before rollback:"
             sudo docker compose ps
 
-            git fetch origin main
-            git reset --hard origin/main
+            # Determine the git ref to roll back to
+            if [ -n "$PREV_VERSION" ]; then
+              ROLLBACK_BRANCH="release-${PREV_VERSION}"
+              echo "[INFO] Rolling back to release branch: $ROLLBACK_BRANCH"
+              git fetch origin "$ROLLBACK_BRANCH"
+              git checkout -- .
+              git checkout "origin/$ROLLBACK_BRANCH"
+            else
+              echo "[INFO] No previous version — rolling back to main"
+              git fetch origin main
+              git checkout -- .
+              git checkout origin/main
+            fi
+            git log -1 --oneline
 
             if [ -f deployment/docker_compose/docker-compose.prod.yml ]; then
               cp deployment/docker_compose/docker-compose.prod.yml docker-compose.yml
@@ -519,10 +561,23 @@ jobs:
             sudo docker rm "$LEGACY_PROXY_CONTAINER" 2>/dev/null || true
 
             echo "$GHCR_TOKEN" | sudo docker login ghcr.io -u github-actions --password-stdin
-            sudo docker compose pull
-            sudo docker compose up -d --scale nginx=0 2>/dev/null || sudo docker compose up -d
+
+            # Pull images for the rollback version
+            if [ -n "$PREV_VERSION" ]; then
+              echo "[INFO] Pulling images tagged: $PREV_VERSION"
+              IMAGE_TAG="$PREV_VERSION" sudo -E docker compose pull
+              IMAGE_TAG="$PREV_VERSION" sudo -E docker compose up -d --scale nginx=0 2>/dev/null \
+                || IMAGE_TAG="$PREV_VERSION" sudo -E docker compose up -d
+            else
+              sudo docker compose pull
+              sudo docker compose up -d --scale nginx=0 2>/dev/null || sudo docker compose up -d
+            fi
+
             sleep 15
-            sudo docker compose exec -T api_server alembic upgrade head || true
+
+            # Skip migrations on rollback — the DB schema is already ahead
+            # and the older code is compatible with the newer additive schema.
+            echo "[INFO] Skipping migrations on rollback (DB schema is forward-compatible)"
 
             if [ -d nginx-simple.conf ]; then
               sudo rm -rf nginx-simple.conf
@@ -562,8 +617,9 @@ jobs:
             echo "[INFO] Access: https://klugermax.com"
             echo "[INFO] Tag: deployed-${{ needs.extract-version.outputs.version }}"
           elif [ "$ROLLBACK_TRIGGERED" = "success" ]; then
+            PREV_VERSION="${{ needs.auto-rollback.outputs.prev_version || 'main' }}"
             echo "[WARN] Deployment failed verification and automatic rollback was triggered"
-            echo "[ERROR] Version ${{ needs.extract-version.outputs.version }} was rolled back"
+            echo "[ERROR] Version ${{ needs.extract-version.outputs.version }} was rolled back to $PREV_VERSION"
             exit 1
           else
             echo "[ERROR] Deployment failed and may require manual intervention"
