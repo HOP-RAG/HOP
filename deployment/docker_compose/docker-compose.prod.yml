@@ -8,7 +8,14 @@ services:
       dockerfile: Dockerfile
     command: >
       /bin/sh -c "
-      alembic upgrade head &&
+      if [ \"$${MULTI_TENANT:-false}\" = \"true\" ]; then
+        echo 'Running schema_private migrations...' &&
+        alembic -n schema_private upgrade head &&
+        echo 'Running tenant schema migrations...' &&
+        alembic -x upgrade_all_tenants=true -x continue=true upgrade head;
+      else
+        alembic upgrade head;
+      fi &&
       echo \"Starting ACTIVA API Server\" &&
       uvicorn onyx.main:app --host 0.0.0.0 --port 8080"
     depends_on:
@@ -45,6 +52,8 @@ services:
       - S3_AWS_ACCESS_KEY_ID=${S3_AWS_ACCESS_KEY_ID:-minioadmin}
       - S3_AWS_SECRET_ACCESS_KEY=${S3_AWS_SECRET_ACCESS_KEY:-minioadmin}
       - PERSISTENT_DOCUMENT_STORAGE_PATH=${PERSISTENT_DOCUMENT_STORAGE_PATH:-/app/file-system}
+      # Multi-tenant mode
+      - MULTI_TENANT=${MULTI_TENANT:-false}
     env_file:
       - path: .env
         required: false
