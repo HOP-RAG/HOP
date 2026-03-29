@@ -75,6 +75,7 @@ def run_migrations_offline() -> None:
         target_metadata=target_metadata,  # type: ignore
         literal_binds=True,
         dialect_opts={"paramstyle": "named"},
+        version_table="alembic_version_schema_private",
     )
 
     with context.begin_transaction():
@@ -86,6 +87,7 @@ def do_run_migrations(connection: Connection) -> None:
         connection=connection,
         target_metadata=target_metadata,  # type: ignore[arg-type]
         include_object=include_object,
+        version_table="alembic_version_schema_private",
     )
 
     with context.begin_transaction():
