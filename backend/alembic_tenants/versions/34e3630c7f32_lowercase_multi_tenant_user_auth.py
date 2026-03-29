@@ -6,6 +6,8 @@ Create Date: 2025-02-26 15:03:01.211894
 
 """
 
+import sqlalchemy as sa
+
 from alembic import op
 
 
@@ -25,12 +27,22 @@ def upgrade() -> None:
         """
     )
     # 2) Add a check constraint so that emails cannot be written in uppercase
-    op.create_check_constraint(
-        "ensure_lowercase_email",
-        "user_tenant_mapping",
-        "email = LOWER(email)",
-        schema="public",
+    # (skip if it already exists from a prior migration track)
+    conn = op.get_bind()
+    result = conn.execute(
+        sa.text(
+            "SELECT 1 FROM information_schema.table_constraints "
+            "WHERE constraint_name = 'ensure_lowercase_email' "
+            "AND table_name = 'user_tenant_mapping'"
+        )
     )
+    if result.fetchone() is None:
+        op.create_check_constraint(
+            "ensure_lowercase_email",
+            "user_tenant_mapping",
+            "email = LOWER(email)",
+            schema="public",
+        )
 
 
 def downgrade() -> None:
