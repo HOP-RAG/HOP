@@ -439,7 +439,7 @@ jobs:
 
   auto-rollback:
     needs: [extract-version, deploy, verify]
-    if: needs.deploy.result == 'success' && needs.verify.result == 'failure'
+    if: needs.deploy.result == 'failure' || (needs.deploy.result == 'success' && needs.verify.result == 'failure')
     runs-on: ubuntu-latest
     timeout-minutes: 30
     steps:
