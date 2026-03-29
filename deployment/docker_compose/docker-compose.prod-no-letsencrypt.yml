@@ -7,7 +7,15 @@ services:
       context: ../../backend
       dockerfile: Dockerfile
     command: >
-      /bin/sh -c "alembic upgrade head &&
+      /bin/sh -c "
+      if [ \"$${MULTI_TENANT:-false}\" = \"true\" ]; then
+        echo 'Running schema_private migrations...' &&
+        alembic -n schema_private upgrade head &&
+        echo 'Running tenant schema migrations...' &&
+        alembic -x upgrade_all_tenants=true -x continue=true upgrade head;
+      else
+        alembic upgrade head;
+      fi &&
       echo \"Starting ACTIVA API Server\" &&
       uvicorn onyx.main:app --host 0.0.0.0 --port 8080"
     depends_on:

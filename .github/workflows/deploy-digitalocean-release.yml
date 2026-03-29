@@ -223,9 +223,18 @@ jobs:
             echo "[INFO] Waiting for services to initialize..."
             sleep 15
 
-            echo "[INFO] Starting database migrations in the background..."
-            sudo docker compose exec -d api_server alembic upgrade head 2>/dev/null || true
-            sleep 2
+            echo "[INFO] Running database migrations..."
+            MULTI_TENANT_ENABLED=$(grep -qE '^MULTI_TENANT=true' .env 2>/dev/null && echo "true" || echo "false")
+
+            if [ "$MULTI_TENANT_ENABLED" = "true" ]; then
+              echo "[INFO] Multi-tenant mode: running schema_private migrations..."
+              sudo docker compose exec -T api_server alembic -n schema_private upgrade head
+              echo "[INFO] Multi-tenant mode: running tenant schema migrations..."
+              sudo docker compose exec -T api_server alembic -x upgrade_all_tenants=true -x continue=true upgrade head
+            else
+              echo "[INFO] Single-tenant mode: running standard migrations..."
+              sudo docker compose exec -T api_server alembic upgrade head
+            fi
 
             echo "[INFO] Checking nginx-simple.conf state..."
             if [ -d nginx-simple.conf ]; then
