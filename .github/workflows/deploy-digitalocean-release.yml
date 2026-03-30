@@ -210,15 +210,22 @@ jobs:
 
             echo "[INFO] Stopping current services..."
             sudo docker compose down --remove-orphans
-            sudo docker stop "$PROXY_CONTAINER" 2>/dev/null || true
-            sudo docker rm "$PROXY_CONTAINER" 2>/dev/null || true
             sudo docker stop "$LEGACY_PROXY_CONTAINER" 2>/dev/null || true
             sudo docker rm "$LEGACY_PROXY_CONTAINER" 2>/dev/null || true
 
             sleep 2
 
-            echo "[INFO] Starting ACTIVA services without embedded nginx..."
-            sudo docker compose up -d --scale nginx=0 2>/dev/null || sudo docker compose up -d
+            echo "[INFO] Checking nginx-simple.conf state..."
+            if [ -d nginx-simple.conf ]; then
+              sudo rm -rf nginx-simple.conf
+            fi
+            if [ ! -f nginx-simple.conf ]; then
+              echo "[ERROR] nginx-simple.conf is missing or corrupted"
+              exit 1
+            fi
+
+            echo "[INFO] Starting ACTIVA services..."
+            sudo docker compose up -d
 
             echo "[INFO] Waiting for services to initialize..."
             sleep 15
@@ -236,41 +243,11 @@ jobs:
               sudo docker compose exec -T api_server alembic upgrade head
             fi
 
-            echo "[INFO] Checking nginx-simple.conf state..."
-            if [ -d nginx-simple.conf ]; then
-              sudo rm -rf nginx-simple.conf
-            fi
-            if [ ! -f nginx-simple.conf ]; then
-              echo "[ERROR] nginx-simple.conf is missing or corrupted"
-              exit 1
-            fi
-
-            echo "[INFO] Starting dedicated reverse proxy..."
-            CONTAINER_ID=$(sudo docker run -d \
-              --name "$PROXY_CONTAINER" \
-              --network hop_default \
-              -p 80:80 \
-              -p 443:443 \
-              -v "$(pwd)"/nginx-simple.conf:/etc/nginx/nginx.conf:ro \
-              -v /etc/letsencrypt:/etc/letsencrypt:ro \
-              -v /var/www/certbot:/var/www/certbot \
-              nginx:alpine 2>&1)
-
-            RUN_EXIT_CODE=$?
-            if [ $RUN_EXIT_CODE -ne 0 ]; then
-              echo "[ERROR] docker run failed while creating the proxy"
-              echo "$CONTAINER_ID"
-              exit 1
-            fi
-
-            sleep 3
-
-            echo "[INFO] Verifying proxy container..."
-            if ! sudo docker ps | grep -q "$PROXY_CONTAINER"; then
-              echo "[ERROR] Container $PROXY_CONTAINER is not running"
+            echo "[INFO] Verifying nginx container..."
+            if ! sudo docker ps | grep -q "hop-nginx"; then
+              echo "[ERROR] nginx container is not running"
               sudo docker ps
-              sudo docker ps -a | grep -E "$PROXY_CONTAINER|$LEGACY_PROXY_CONTAINER" || true
-              sudo docker logs "$PROXY_CONTAINER" 2>&1 | tail -30 || true
+              sudo docker logs hop-nginx-1 2>&1 | tail -30 || true
               exit 1
             fi
 
@@ -564,8 +541,6 @@ jobs:
             fi
 
             sudo docker compose down --remove-orphans
-            sudo docker stop "$PROXY_CONTAINER" 2>/dev/null || true
-            sudo docker rm "$PROXY_CONTAINER" 2>/dev/null || true
             sudo docker stop "$LEGACY_PROXY_CONTAINER" 2>/dev/null || true
             sudo docker rm "$LEGACY_PROXY_CONTAINER" 2>/dev/null || true
 
@@ -575,11 +550,10 @@ jobs:
             if [ -n "$PREV_VERSION" ]; then
               echo "[INFO] Pulling images tagged: $PREV_VERSION"
               IMAGE_TAG="$PREV_VERSION" sudo -E docker compose pull
-              IMAGE_TAG="$PREV_VERSION" sudo -E docker compose up -d --scale nginx=0 2>/dev/null \
-                || IMAGE_TAG="$PREV_VERSION" sudo -E docker compose up -d
+              IMAGE_TAG="$PREV_VERSION" sudo -E docker compose up -d
             else
               sudo docker compose pull
-              sudo docker compose up -d --scale nginx=0 2>/dev/null || sudo docker compose up -d
+              sudo docker compose up -d
             fi
 
             sleep 15
@@ -587,24 +561,6 @@ jobs:
             # Skip migrations on rollback — the DB schema is already ahead
             # and the older code is compatible with the newer additive schema.
             echo "[INFO] Skipping migrations on rollback (DB schema is forward-compatible)"
-
-            if [ -d nginx-simple.conf ]; then
-              sudo rm -rf nginx-simple.conf
-            fi
-            if [ ! -f nginx-simple.conf ]; then
-              echo "[ERROR] Missing nginx-simple.conf after rollback"
-              exit 1
-            fi
-
-            sudo docker run -d \
-              --name "$PROXY_CONTAINER" \
-              --network hop_default \
-              -p 80:80 \
-              -p 443:443 \
-              -v "$(pwd)"/nginx-simple.conf:/etc/nginx/nginx.conf:ro \
-              -v /etc/letsencrypt:/etc/letsencrypt:ro \
-              -v /var/www/certbot:/var/www/certbot \
-              nginx:alpine >/dev/null
 
             echo "[OK] Automatic rollback completed"
           EOSSH
