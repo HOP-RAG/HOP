@@ -1,6 +1,7 @@
 "use client";
 
 import { useState, useCallback } from "react";
+import { useSWRConfig } from "swr";
 import { Button } from "@opal/components";
 import { SvgUsers, SvgAlertTriangle } from "@opal/icons";
 import { Disabled } from "@opal/core";
@@ -34,6 +35,7 @@ export default function InviteUsersModal({
   open,
   onOpenChange,
 }: InviteUsersModalProps) {
+  const { mutate } = useSWRConfig();
   const [chips, setChips] = useState<ChipItem[]>([]);
   const [inputValue, setInputValue] = useState("");
   const [isSubmitting, setIsSubmitting] = useState(false);
@@ -117,6 +119,8 @@ export default function InviteUsersModal({
     setIsSubmitting(true);
     try {
       await inviteUsers(validEmails);
+      mutate("/api/manage/users/invited");
+      mutate("/api/manage/users/counts");
       toast.success(
         `Invited ${validEmails.length} user${validEmails.length > 1 ? "s" : ""}`
       );
