@@ -47,6 +47,8 @@ from onyx.configs.app_configs import USER_AUTH_SECRET
 from onyx.configs.app_configs import VALID_EMAIL_DOMAINS
 from onyx.configs.constants import FASTAPI_USERS_AUTH_COOKIE_NAME
 from onyx.configs.constants import PUBLIC_API_TAGS
+from onyx.error_handling.error_codes import OnyxErrorCode
+from onyx.error_handling.exceptions import OnyxError
 from onyx.db.api_key import is_api_key_email_address
 from onyx.db.auth import get_live_users_count
 from onyx.db.engine.sql_engine import get_session
@@ -502,6 +504,21 @@ def bulk_invite_users(
             fetch_ee_implementation_or_noop(
                 "onyx.server.tenants.billing", "register_tenant_users", None
             )(tenant_id, get_live_users_count(db_session))
+        except OnyxError as e:
+            if e.error_code == OnyxErrorCode.NOT_IMPLEMENTED:
+                # No control plane configured — billing tracking is not available,
+                # but the invite itself should still succeed.
+                logger.info("Billing not configured, skipping seat registration.")
+            else:
+                logger.error(f"Failed to register tenant users: {str(e)}")
+                logger.info(
+                    "Reverting changes: removing users from tenant and resetting invited users"
+                )
+                write_invited_users(initial_invited_users)  # Reset to original state
+                fetch_ee_implementation_or_noop(
+                    "onyx.server.tenants.user_mapping", "remove_users_from_tenant", None
+                )(new_invited_emails, tenant_id)
+                raise e
         except Exception as e:
             logger.error(f"Failed to register tenant users: {str(e)}")
             logger.info(
@@ -537,6 +554,15 @@ def remove_invited_user(
             fetch_ee_implementation_or_noop(
                 "onyx.server.tenants.billing", "register_tenant_users", None
             )(tenant_id, get_live_users_count(db_session))
+    except OnyxError as e:
+        if e.error_code == OnyxErrorCode.NOT_IMPLEMENTED:
+            logger.info("Billing not configured, skipping seat registration.")
+        else:
+            logger.error(
+                "Request to update number of seats taken in control plane failed. "
+                "This may cause synchronization issues/out of date enforcement of seat limits."
+            )
+            raise e
     except Exception:
         logger.error(
             "Request to update number of seats taken in control plane failed. "
