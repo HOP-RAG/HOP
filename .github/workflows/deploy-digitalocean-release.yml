@@ -210,6 +210,9 @@ jobs:
 
             echo "[INFO] Stopping current services..."
             sudo docker compose down --remove-orphans
+            # Remove any standalone proxy containers that may be holding ports 80/443
+            sudo docker stop "$PROXY_CONTAINER" 2>/dev/null || true
+            sudo docker rm "$PROXY_CONTAINER" 2>/dev/null || true
             sudo docker stop "$LEGACY_PROXY_CONTAINER" 2>/dev/null || true
             sudo docker rm "$LEGACY_PROXY_CONTAINER" 2>/dev/null || true
 
