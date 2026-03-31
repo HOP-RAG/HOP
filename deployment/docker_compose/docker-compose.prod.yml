@@ -387,7 +387,7 @@ services:
         max-file: "6"
 
   nginx:
-    image: nginx:1.25.5-alpine
+    image: nginx:alpine
     restart: unless-stopped
     deploy:
       resources:
@@ -406,32 +406,14 @@ services:
       - "80:80"
       - "443:443"
     volumes:
-      - ../data/nginx:/etc/nginx/conf.d
-      - ../data/certbot/conf:/etc/letsencrypt
-      - ../data/certbot/www:/var/www/certbot
-    # sleep a little bit to allow the web_server / api_server to start up.
-    # Without this we've seen issues where nginx shows no error logs but
-    # does not recieve any traffic
+      - ./nginx-simple.conf:/etc/nginx/nginx.conf:ro
+      - /etc/letsencrypt:/etc/letsencrypt:ro
+      - /var/www/certbot:/var/www/certbot
     logging:
       driver: json-file
       options:
         max-size: "50m"
         max-file: "6"
-    # The specified script waits for the api_server to start up.
-    # Without this we've seen issues where nginx shows no error logs but
-    # does not recieve any traffic
-    # NOTE: we have to use dos2unix to remove Carriage Return chars from the file
-    # in order to make this work on both Unix-like systems and windows
-    command: >
-      /bin/sh -c "dos2unix /etc/nginx/conf.d/run-nginx.sh
-      && /etc/nginx/conf.d/run-nginx.sh app.conf.template.prod"
-    env_file:
-      - .env.nginx
-    environment:
-      # Nginx proxy timeout settings (in seconds)
-      - NGINX_PROXY_CONNECT_TIMEOUT=${NGINX_PROXY_CONNECT_TIMEOUT:-300}
-      - NGINX_PROXY_SEND_TIMEOUT=${NGINX_PROXY_SEND_TIMEOUT:-300}
-      - NGINX_PROXY_READ_TIMEOUT=${NGINX_PROXY_READ_TIMEOUT:-300}
 
   # follows https://pentacent.medium.com/nginx-and-lets-encrypt-with-docker-in-less-than-5-minutes-b4b8a60d3a71
   certbot:
