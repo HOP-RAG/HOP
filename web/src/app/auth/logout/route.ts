@@ -5,7 +5,14 @@ export const POST = async (request: NextRequest) => {
   // Directs the logout request to the appropriate FastAPI endpoint.
   // Needed since env variables don't work well on the client-side
   const authTypeMetadata = await getAuthTypeMetadataSS();
-  const response = await logoutSS(authTypeMetadata.authType, request.headers);
+  // Only forward the cookie header — passing all browser headers (e.g. Connection: keep-alive)
+  // causes undici to throw UND_ERR_INVALID_ARG on server-to-server fetches.
+  const forwardHeaders = new Headers();
+  const cookieHeader = request.headers.get("cookie");
+  if (cookieHeader) {
+    forwardHeaders.set("cookie", cookieHeader);
+  }
+  const response = await logoutSS(authTypeMetadata.authType, forwardHeaders);
 
   if (response && !response.ok) {
     return new Response(response.body, { status: response?.status });
