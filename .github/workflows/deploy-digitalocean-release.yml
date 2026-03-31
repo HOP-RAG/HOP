@@ -192,6 +192,10 @@ jobs:
               exit 1
             fi
 
+            echo "[INFO] Syncing supporting config directories..."
+            cp -r deployment/docker_compose/victoriametrics ./victoriametrics
+            cp -r deployment/docker_compose/grafana ./grafana
+
             echo "[INFO] Validating deployment prerequisites..."
             if [ ! -f nginx-simple.conf ]; then
               echo "[ERROR] Missing nginx-simple.conf in $(pwd)"
