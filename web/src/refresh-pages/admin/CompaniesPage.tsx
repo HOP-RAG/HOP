@@ -273,32 +273,21 @@ function CreateCompanyCard({
   }
 
   return (
-    <div className="rounded-20 border border-[color:var(--landing-border)] bg-[color:var(--landing-card)] p-5 shadow-[0_26px_60px_-36px_rgba(33,64,120,0.52)] backdrop-blur-sm">
-      <div className="rounded-16 border border-[color:var(--landing-border)] bg-[image:var(--landing-card-tint)] p-5">
-        <div className="flex flex-col gap-2">
-          <div className="inline-flex w-fit rounded-full border border-[color:var(--landing-border)] bg-[var(--landing-accent-pale)] px-3 py-1">
-            <Text
-              as="span"
-              className="text-[11px] font-semibold uppercase tracking-[0.2em] text-[var(--landing-accent-strong)]"
-            >
-              {t("companies.create.badge")}
+    <Card padding={0} gap={0}>
+      <div className="flex flex-col gap-4 p-5">
+        <div className="flex flex-col gap-1">
+          <div className="flex items-center gap-2">
+            <SvgPlusCircle className="h-4 w-4 stroke-text-03" />
+            <Text mainAction text01>
+              {t("companies.create.title")}
             </Text>
           </div>
-          <Text
-            as="p"
-            className="text-[1.4rem] font-semibold tracking-[-0.04em] text-[var(--landing-text)]"
-          >
-            {t("companies.create.title")}
-          </Text>
-          <Text
-            as="p"
-            className="text-sm leading-7 text-[var(--landing-muted)]"
-          >
+          <Text secondaryBody text03>
             {t("companies.create.description")}
           </Text>
         </div>
 
-        <form className="flex flex-col gap-4 pt-6" onSubmit={handleSubmit}>
+        <form className="flex flex-col gap-4" onSubmit={handleSubmit}>
           <FormField label={t("companies.fields.companyName")}>
             <InputTypeIn
               value={name}
@@ -340,12 +329,28 @@ function CreateCompanyCard({
           </div>
         </form>
       </div>
-    </div>
+    </Card>
   );
 }
 
-function CompanyUsersList({ users }: { users: CompanyUserSnapshot[] }) {
+interface CompanyUsersListProps {
+  users: CompanyUserSnapshot[];
+  onResendInvite?: (email: string) => Promise<void>;
+}
+
+function CompanyUsersList({ users, onResendInvite }: CompanyUsersListProps) {
   const { t } = useAppLanguage();
+  const [resendingEmail, setResendingEmail] = useState<string | null>(null);
+
+  async function handleResend(email: string) {
+    if (!onResendInvite || resendingEmail) return;
+    setResendingEmail(email);
+    try {
+      await onResendInvite(email);
+    } finally {
+      setResendingEmail(null);
+    }
+  }
 
   if (!users.length) {
     return (
@@ -374,9 +379,23 @@ function CompanyUsersList({ users }: { users: CompanyUserSnapshot[] }) {
                 : t("companies.users.pendingRegistration")}
             </Text>
           </div>
-          <div className="flex flex-wrap gap-2">
+          <div className="flex flex-wrap items-center gap-2">
             <Tag label={roleLabel(user.role, t)} />
             <Tag label={userStatusLabel(user, t)} />
+            {!user.registered && onResendInvite ? (
+              <Disabled disabled={resendingEmail !== null}>
+                <Button
+                  size="sm"
+                  prominence="tertiary"
+                  icon={SvgUserPlus}
+                  onClick={() => handleResend(user.email)}
+                >
+                  {resendingEmail === user.email
+                    ? t("companies.buttons.sending")
+                    : t("companies.buttons.resendInvite")}
+                </Button>
+              </Disabled>
+            ) : null}
           </div>
         </div>
       ))}
@@ -650,7 +669,10 @@ function CompanyDetailPanel({
             {t("companies.detail.usersInCompany")}
           </Text>
         </div>
-        <CompanyUsersList users={currentCompany.users} />
+        <CompanyUsersList
+          users={currentCompany.users}
+          onResendInvite={onInviteAdmin}
+        />
       </div>
     </div>
   );

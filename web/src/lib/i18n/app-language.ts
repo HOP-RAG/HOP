@@ -274,6 +274,7 @@ const translations = {
     "companies.buttons.saving": "Saving...",
     "companies.buttons.inviteAdmin": "Invite admin",
     "companies.buttons.sending": "Sending...",
+    "companies.buttons.resendInvite": "Send invite",
     "companies.roster.title": "Company roster",
     "companies.roster.description":
       "Select a company to inspect users, adjust metadata, or change activation state.",
@@ -621,6 +622,7 @@ const translations = {
     "companies.buttons.saving": "Guardando...",
     "companies.buttons.inviteAdmin": "Invitar admin",
     "companies.buttons.sending": "Enviando...",
+    "companies.buttons.resendInvite": "Enviar invitacion",
     "companies.roster.title": "Listado de empresas",
     "companies.roster.description":
       "Selecciona una empresa para inspeccionar usuarios, ajustar metadata o cambiar su activacion.",
