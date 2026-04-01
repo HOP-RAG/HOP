@@ -11,6 +11,10 @@ from ee.onyx.server.tenants.models import CompanyInviteAdminRequest
 from ee.onyx.server.tenants.models import CompanySnapshot
 from ee.onyx.server.tenants.models import CompanyUpdateRequest
 from ee.onyx.server.tenants.models import CompanyUserSnapshot
+from onyx.auth.email_utils import send_user_email_invite
+from onyx.configs.app_configs import AUTH_TYPE
+from onyx.configs.app_configs import EMAIL_CONFIGURED
+from onyx.configs.app_configs import ENABLE_EMAIL_INVITES
 from onyx.configs.constants import PUBLIC_API_TAGS
 from onyx.db.company import activate_company as activate_company_in_db
 from onyx.db.company import create_company as create_company_in_db
@@ -23,7 +27,9 @@ from onyx.db.models import Company
 from onyx.db.models import User
 from onyx.db.models import UserTenantMapping
 from onyx.server.documents.models import PaginatedReturn
+from onyx.utils.logger import setup_logger
 
+logger = setup_logger()
 
 router = APIRouter(prefix="/admin/companies", tags=PUBLIC_API_TAGS)
 
@@ -67,6 +73,13 @@ async def create_company(
         admin_email=create_request.admin_email,
         created_by=user.email,
     )
+
+    if ENABLE_EMAIL_INVITES and EMAIL_CONFIGURED:
+        try:
+            send_user_email_invite(create_request.admin_email, user, AUTH_TYPE)
+        except Exception as e:
+            logger.error(f"Failed to send invite email to company admin {create_request.admin_email}: {e}")
+
     company, user_rows = get_company_in_db(company.id)
     return _company_detail_from_rows(company, user_rows)
 
@@ -141,7 +154,14 @@ def activate_company(
 def invite_admin(
     company_id: UUID,
     invite_request: CompanyInviteAdminRequest,
-    _: User = Depends(current_platform_admin),
+    user: User = Depends(current_platform_admin),
 ) -> CompanyDetail:
     company, user_rows = invite_company_admin(company_id, invite_request.email)
+
+    if ENABLE_EMAIL_INVITES and EMAIL_CONFIGURED:
+        try:
+            send_user_email_invite(invite_request.email, user, AUTH_TYPE)
+        except Exception as e:
+            logger.error(f"Failed to send invite email to company admin {invite_request.email}: {e}")
+
     return _company_detail_from_rows(company, user_rows)
