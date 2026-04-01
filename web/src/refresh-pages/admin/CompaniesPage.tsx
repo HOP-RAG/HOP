@@ -278,7 +278,7 @@ function CreateCompanyCard({
         <div className="flex flex-col gap-1">
           <div className="flex items-center gap-2">
             <SvgPlusCircle className="h-4 w-4 stroke-text-03" />
-            <Text mainAction text01>
+            <Text mainUiAction text01>
               {t("companies.create.title")}
             </Text>
           </div>
