@@ -333,8 +333,24 @@ function CreateCompanyCard({
   );
 }
 
-function CompanyUsersList({ users }: { users: CompanyUserSnapshot[] }) {
+interface CompanyUsersListProps {
+  users: CompanyUserSnapshot[];
+  onResendInvite?: (email: string) => Promise<void>;
+}
+
+function CompanyUsersList({ users, onResendInvite }: CompanyUsersListProps) {
   const { t } = useAppLanguage();
+  const [resendingEmail, setResendingEmail] = useState<string | null>(null);
+
+  async function handleResend(email: string) {
+    if (!onResendInvite || resendingEmail) return;
+    setResendingEmail(email);
+    try {
+      await onResendInvite(email);
+    } finally {
+      setResendingEmail(null);
+    }
+  }
 
   if (!users.length) {
     return (
@@ -363,9 +379,23 @@ function CompanyUsersList({ users }: { users: CompanyUserSnapshot[] }) {
                 : t("companies.users.pendingRegistration")}
             </Text>
           </div>
-          <div className="flex flex-wrap gap-2">
+          <div className="flex flex-wrap items-center gap-2">
             <Tag label={roleLabel(user.role, t)} />
             <Tag label={userStatusLabel(user, t)} />
+            {!user.registered && onResendInvite ? (
+              <Disabled disabled={resendingEmail !== null}>
+                <Button
+                  size="sm"
+                  prominence="tertiary"
+                  icon={SvgUserPlus}
+                  onClick={() => handleResend(user.email)}
+                >
+                  {resendingEmail === user.email
+                    ? t("companies.buttons.sending")
+                    : t("companies.buttons.resendInvite")}
+                </Button>
+              </Disabled>
+            ) : null}
           </div>
         </div>
       ))}
@@ -639,7 +669,10 @@ function CompanyDetailPanel({
             {t("companies.detail.usersInCompany")}
           </Text>
         </div>
-        <CompanyUsersList users={currentCompany.users} />
+        <CompanyUsersList
+          users={currentCompany.users}
+          onResendInvite={onInviteAdmin}
+        />
       </div>
     </div>
   );
