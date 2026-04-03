@@ -157,6 +157,149 @@ HTML_EMAIL_TEMPLATE = """\
 """
 
 
+INVITATION_EMAIL_TEMPLATE = """\
+<!DOCTYPE html>
+<html lang="es">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width" />
+  <title>{title}</title>
+  <style>
+    body, table, td, a {{
+      font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, Helvetica, Arial, sans-serif;
+      text-size-adjust: 100%;
+      margin: 0;
+      padding: 0;
+      -webkit-font-smoothing: antialiased;
+      -webkit-text-size-adjust: none;
+    }}
+    body {{
+      width: 100% !important;
+      background-color: #111318;
+      color: #E5E7EB;
+    }}
+    .email-container {{
+      width: 100%;
+      max-width: 600px;
+      margin: 0 auto;
+      background-color: #1C1F26;
+      border-radius: 6px;
+      overflow: hidden;
+      border: 1px solid #2A2F3A;
+    }}
+    .header {{
+      background-color: #1C1F26;
+      padding: 24px 20px 12px;
+      text-align: center;
+    }}
+    .header img {{
+      display: block;
+      margin: 0 auto;
+      max-width: 140px;
+      width: 140px;
+      height: auto;
+    }}
+    .body-content {{
+      background-color: #1C1F26;
+      color: #E5E7EB;
+      padding: 12px 30px 24px;
+    }}
+    .title {{
+      color: #FFFFFF;
+      font-size: 20px;
+      font-weight: bold;
+      margin: 0 0 10px;
+    }}
+    .message {{
+      font-size: 16px;
+      line-height: 1.5;
+      color: #E5E7EB;
+    }}
+    .message p {{
+      margin: 0 0 20px;
+    }}
+    .message p:last-child {{
+      margin-bottom: 0;
+    }}
+    .cta-button {{
+      display: inline-block;
+      padding: 14px 24px;
+      background-color: #7181F5;
+      color: #111318 !important;
+      text-decoration: none;
+      border-radius: 4px;
+      font-weight: 600;
+      font-size: 16px;
+      margin-top: 18px;
+      text-align: center;
+    }}
+    .footer {{
+      background-color: #1C1F26;
+      font-size: 13px;
+      color: #B4BBC7;
+      text-align: center;
+      padding: 0 20px 24px;
+      line-height: 1.6;
+    }}
+    .footer a {{
+      color: #D8E1F0;
+      text-decoration: underline;
+    }}
+    @media only screen and (max-width: 600px) {{
+      .header {{
+        padding: 24px 20px 12px !important;
+      }}
+      .body-content {{
+        padding: 12px 20px 24px !important;
+      }}
+      .cta-button {{
+        display: block !important;
+        width: 100% !important;
+        box-sizing: border-box;
+      }}
+    }}
+  </style>
+</head>
+<body>
+  <table role="presentation" width="100%" cellpadding="0" cellspacing="0" border="0">
+    <tr>
+      <td align="center" style="padding: 24px 12px;">
+        <table
+          role="presentation"
+          class="email-container"
+          width="100%"
+          cellpadding="0"
+          cellspacing="0"
+          border="0"
+        >
+          <tr>
+            <td class="header">
+              <img src="cid:logo.png" alt="{application_name} Logo">
+            </td>
+          </tr>
+          <tr>
+            <td class="body-content">
+              <h1 class="title">{heading}</h1>
+              <div class="message">
+                {message}
+              </div>
+              {cta_block}
+            </td>
+          </tr>
+          <tr>
+            <td class="footer">
+              {footer_html}
+            </td>
+          </tr>
+        </table>
+      </td>
+    </tr>
+  </table>
+</body>
+</html>
+"""
+
+
 def _extract_domain_from_email_address(email_address: str | None) -> str | None:
     _, parsed_email = parseaddr(email_address or "")
     if not parsed_email or "@" not in parsed_email:
@@ -217,6 +360,33 @@ def build_html_email(
         cta_block=cta_block,
         community_link_fragment=community_link_fragment,
         year=datetime.now().year,
+    ).replace("\u00c2\u00a9", "&copy;").replace("\u00a9", "&copy;")
+
+
+def build_invitation_html_email(
+    application_name: str,
+    heading: str,
+    message: str,
+    cta_text: str,
+    cta_link: str,
+) -> str:
+    cta_block = f'<a class="cta-button" href="{cta_link}">{cta_text}</a>'
+    footer_html = (
+        f"&copy; {datetime.now().year} {application_name}. Todos los derechos reservados."
+    )
+    if application_name == ONYX_DEFAULT_APPLICATION_NAME:
+        footer_html += (
+            f'<br>&iquest;Tienes preguntas? &Uacute;nete a nuestra comunidad de Discord '
+            f'<a href="{ONYX_DISCORD_URL}">aqu&iacute;</a>.'
+        )
+
+    return INVITATION_EMAIL_TEMPLATE.format(
+        application_name=application_name,
+        title=heading,
+        heading=heading,
+        message=message,
+        cta_block=cta_block,
+        footer_html=footer_html,
     ).replace("\u00c2\u00a9", "&copy;").replace("\u00a9", "&copy;")
 
 
@@ -383,28 +553,31 @@ def send_subscription_cancellation_email(user_email: str) -> None:
 def build_user_email_invite(
     from_email: str, to_email: str, application_name: str, auth_type: AuthType
 ) -> tuple[str, str]:
-    heading = "You've Been Invited!"
+    heading = "Has sido invitado"
 
     # the exact action taken by the user, and thus the message, depends on the auth type
-    message = f"<p>You have been invited by {from_email} to join an organization on {application_name}.</p>"
+    message = (
+        f"<p>Has sido invitado por {from_email} para unirte a una "
+        f"organizaci\u00f3n en {application_name}.</p>"
+    )
     if auth_type == AuthType.CLOUD:
         message += (
-            "<p>To join the organization, please click the button below to set a password "
-            "or login with Google and complete your registration.</p>"
+            "<p>Para unirte a la organizaci\u00f3n, haz clic en el bot\u00f3n de abajo para crear tu contrase\u00f1a "
+            "o iniciar sesi\u00f3n con Google y completar tu registro.</p>"
         )
     elif auth_type == AuthType.BASIC:
-        message += "<p>To join the organization, please click the button below to set a password and complete your registration.</p>"
+        message += "<p>Para unirte a la organizaci\u00f3n, haz clic en el bot\u00f3n de abajo para crear tu contrase\u00f1a y completar tu registro.</p>"
     elif auth_type == AuthType.GOOGLE_OAUTH:
-        message += "<p>To join the organization, please click the button below to login with Google and complete your registration.</p>"
+        message += "<p>Para unirte a la organizaci\u00f3n, haz clic en el bot\u00f3n de abajo para iniciar sesi\u00f3n con Google y completar tu registro.</p>"
     elif auth_type == AuthType.OIDC or auth_type == AuthType.SAML:
-        message += "<p>To join the organization, please click the button below to complete your registration.</p>"
+        message += "<p>Para unirte a la organizaci\u00f3n, haz clic en el bot\u00f3n de abajo para completar tu registro.</p>"
     else:
         raise ValueError(f"Invalid auth type: {auth_type}")
 
-    cta_text = "Join Organization"
+    cta_text = "Unirme a la organizaci\u00f3n"
     cta_link = f"{WEB_DOMAIN}/auth/signup?email={to_email}"
 
-    html_content = build_html_email(
+    html_content = build_invitation_html_email(
         application_name,
         heading,
         message,
@@ -415,12 +588,21 @@ def build_user_email_invite(
     # text content is the fallback for clients that don't support HTML
     # not as critical, so not having special cases for each auth type
     text_content = (
-        f"You have been invited by {from_email} to join an organization on {application_name}.\n"
-        "To join the organization, please visit the following link:\n"
+        f"Has sido invitado por {from_email} para unirte a una organizaci\u00f3n en {application_name}.\n"
+        "Para unirte a la organizaci\u00f3n, visita el siguiente enlace:\n"
         f"{WEB_DOMAIN}/auth/signup?email={to_email}\n"
     )
     if auth_type == AuthType.CLOUD:
-        text_content += "You'll be asked to set a password or login with Google to complete your registration."
+        text_content += (
+            "Podr\u00e1s crear tu contrase\u00f1a o iniciar sesi\u00f3n con Google para "
+            "completar tu registro."
+        )
+    elif auth_type == AuthType.BASIC:
+        text_content += "Crear\u00e1s tu contrase\u00f1a y completar\u00e1s tu registro."
+    elif auth_type == AuthType.GOOGLE_OAUTH:
+        text_content += "Iniciar\u00e1s sesi\u00f3n con Google para completar tu registro."
+    elif auth_type == AuthType.OIDC or auth_type == AuthType.SAML:
+        text_content += "Completar\u00e1s tu registro."
 
     return text_content, html_content
 
@@ -439,7 +621,9 @@ def send_user_email_invite(
 
     logo_file = OnyxRuntime.get_emailable_logo()
 
-    subject = f"Invitation to Join {application_name} Organization"
+    subject = (
+        f"Invitaci\u00f3n para unirte a una organizaci\u00f3n en {application_name}"
+    )
 
     text_content, html_content = build_user_email_invite(
         current_user.email, user_email, application_name, auth_type
