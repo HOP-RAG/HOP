@@ -21,8 +21,14 @@ def test_build_user_email_invite_uses_default_application_name() -> None:
     assert ONYX_DEFAULT_APPLICATION_NAME in text_content
     assert ONYX_DEFAULT_APPLICATION_NAME in html_content
     assert (
-        f"join an organization on {ONYX_DEFAULT_APPLICATION_NAME}" in text_content
+        f"para unirte a una organizaci\u00f3n en {ONYX_DEFAULT_APPLICATION_NAME}"
+        in text_content
     )
+    assert "Has sido invitado" in html_content
+    assert "Unirme a la organizaci\u00f3n" in html_content
+    assert "&Uacute;nete a nuestra comunidad de Discord" in html_content
+    assert "Todos los derechos reservados." in html_content
+    assert "background-color: #ffffff; border-radius: 8px;" not in html_content
 
 
 def test_build_html_email_uses_default_application_name() -> None:
@@ -48,7 +54,9 @@ def test_send_user_email_invite() -> None:
 
     onyx_file = OnyxRuntime.get_emailable_logo()
 
-    subject = f"Invitation to Join {application_name} Organization"
+    subject = (
+        f"Invitaci\u00f3n para unirte a una organizaci\u00f3n en {application_name}"
+    )
 
     from_email = "noreply@onyx.app"
     to_email = "support@onyx.app"

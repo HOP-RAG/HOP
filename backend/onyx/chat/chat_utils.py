@@ -304,6 +304,10 @@ def load_chat_file(
 
     if file_type.is_text_file():
         try:
+            # We just consumed the stream above to keep the raw bytes; rewind it so
+            # text extraction still sees the full uploaded file even before any
+            # indexing/plaintext cache has been created.
+            file_io.seek(0)
             content_text = extract_file_text(
                 file=file_io,
                 file_name=file_descriptor.get("name") or "",

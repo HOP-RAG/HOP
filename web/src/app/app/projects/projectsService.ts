@@ -50,6 +50,7 @@ export interface UserFileDeleteResult {
 export enum UserFileStatus {
   UPLOADING = "UPLOADING", //UI only
   PROCESSING = "PROCESSING",
+  INDEXING = "INDEXING",
   COMPLETED = "COMPLETED",
   FAILED = "FAILED",
   CANCELED = "CANCELED",

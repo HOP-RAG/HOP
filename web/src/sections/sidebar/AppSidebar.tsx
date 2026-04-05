@@ -65,6 +65,7 @@ import useScreenSize from "@/hooks/useScreenSize";
 import {
   SvgDevKit,
   SvgEditBig,
+  SvgFiles,
   SvgFolderPlus,
   SvgMoreHorizontal,
   SvgOnyxOctagon,
@@ -566,6 +567,20 @@ const MemoizedAppSidebarInner = memo(
       ),
       [folded, t]
     );
+
+    const myFilesButton = useMemo(
+      () => (
+        <SidebarTab
+          icon={SvgFiles}
+          folded={folded}
+          href="/app/files"
+          selected={activeSidebarTab.isMyFiles()}
+        >
+          My Files
+        </SidebarTab>
+      ),
+      [folded, activeSidebarTab]
+    );
     const moreAgentsButton = useMemo(
       () => (
         <div data-testid="AppSidebar/more-agents">
@@ -700,6 +715,7 @@ const MemoizedAppSidebarInner = memo(
               <div className="flex flex-col">
                 {newSessionButton}
                 {searchChatsButton}
+                {myFilesButton}
                 {isOnyxCraftEnabled && buildButton}
               </div>
             }
