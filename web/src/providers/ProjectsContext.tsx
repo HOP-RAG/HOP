@@ -393,7 +393,10 @@ export function ProjectsProvider({ children }: ProjectsProviderProps) {
             prev.map((f) => {
               if (f.temp_id) {
                 const u = tempIdToUploadedFileMap.get(f.temp_id);
-                return u ? { ...f, ...u } : f;
+                // Clear temp_id so isReadyForChat becomes true immediately —
+                // the file is usable in chat as soon as the upload HTTP request
+                // returns, regardless of whether Celery has started processing.
+                return u ? { ...f, ...u, temp_id: undefined } : f;
               }
               return f;
             })
@@ -636,6 +639,14 @@ export function ProjectsProvider({ children }: ProjectsProviderProps) {
           const map = new Map(prev.map((f) => [f.id, f]));
           for (const latest of statuses) {
             const id = latest.id;
+            // If the file is being deleted, remove it rather than updating it
+            if (String(latest.status).toLowerCase() === "deleting") {
+              if (map.has(id)) {
+                map.delete(id);
+                changed = true;
+              }
+              continue;
+            }
             if (map.has(id)) {
               const prevVal = map.get(id)!;
               if (
