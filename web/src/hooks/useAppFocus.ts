@@ -14,6 +14,7 @@ export type AppFocusType =
   | "new-session"
   | "more-agents"
   | "user-settings"
+  | "my-files"
   | "shared-chat";
 
 export class AppFocus {
@@ -47,6 +48,10 @@ export class AppFocus {
     return this.value === "user-settings";
   }
 
+  isMyFiles(): boolean {
+    return this.value === "my-files";
+  }
+
   getId(): string | null {
     return typeof this.value === "object" ? this.value.id : null;
   }
@@ -58,7 +63,8 @@ export class AppFocus {
     | "shared-chat"
     | "new-session"
     | "more-agents"
-    | "user-settings" {
+    | "user-settings"
+    | "my-files" {
     return typeof this.value === "object" ? this.value.type : this.value;
   }
 }
@@ -79,6 +85,9 @@ export default function useAppFocus(): AppFocus {
     }
     if (pathname.startsWith("/app/settings")) {
       return new AppFocus("user-settings");
+    }
+    if (pathname.startsWith("/app/files")) {
+      return new AppFocus("my-files");
     }
     if (pathname.startsWith("/app/agents")) {
       return new AppFocus("more-agents");

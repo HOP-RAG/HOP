@@ -533,11 +533,15 @@ export function ProjectsProvider({ children }: ProjectsProviderProps) {
   }, [getRecentFiles]);
 
   useEffect(() => {
+    const recentById = new Map(recentFiles.map((f) => [f.id, f]));
     setAllRecentFiles((prev) =>
-      prev.map((f) => {
-        const newFile = recentFiles.find((f2) => f2.id === f.id);
-        return newFile ? { ...f, ...newFile } : f;
-      })
+      prev
+        // Keep optimistic in-flight files and real files still present in the latest fetch
+        .filter((f) => f.temp_id || recentById.has(f.id))
+        .map((f) => {
+          const newFile = recentById.get(f.id);
+          return newFile ? { ...f, ...newFile } : f;
+        })
     );
   }, [recentFiles]);
 
