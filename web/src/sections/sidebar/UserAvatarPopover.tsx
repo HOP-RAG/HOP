@@ -197,15 +197,11 @@ export default function UserAvatarPopover({
       <Popover.Trigger asChild>
         <div id="onyx-user-dropdown">
           <SidebarTab
-            icon={({ className }) => (
+            icon={() => (
               <InputAvatar
-                className={cn(
-                  "flex items-center justify-center bg-background-neutral-inverted-00",
-                  className,
-                  "w-5 h-5"
-                )}
+                className="flex items-center justify-center bg-background-neutral-inverted-00 w-5 h-5"
               >
-                <Text as="p" inverted secondaryBody>
+                <Text as="span" inverted secondaryBody>
                   {userDisplayName[0]?.toUpperCase()}
                 </Text>
               </InputAvatar>

@@ -53,6 +53,7 @@ import {
 import { Button, SelectButton } from "@opal/components";
 import Popover from "@/refresh-components/Popover";
 import SimpleLoader from "@/refresh-components/loaders/SimpleLoader";
+import Text from "@/refresh-components/texts/Text";
 import { useQueryController } from "@/providers/QueryControllerProvider";
 import { Section } from "@/layouts/general-layouts";
 import Spacer from "@/refresh-components/Spacer";
@@ -220,7 +221,9 @@ const AppInputBar = React.memo(
 
     const currentIndexingFiles = useMemo(() => {
       return currentMessageFiles.filter(
-        (file) => file.status === UserFileStatus.PROCESSING
+        (file) =>
+          file.status === UserFileStatus.PROCESSING ||
+          file.status === UserFileStatus.INDEXING
       );
     }, [currentMessageFiles]);
 
@@ -418,6 +421,18 @@ const AppInputBar = React.memo(
       currentIndexingFiles,
       availableContextTokens,
     ]);
+
+    const backgroundChatReadyFiles = useMemo(() => {
+      if (!hideProcessingState) {
+        return [];
+      }
+
+      return currentMessageFiles.filter(
+        (file) =>
+          file.status === UserFileStatus.PROCESSING ||
+          file.status === UserFileStatus.INDEXING
+      );
+    }, [currentMessageFiles, hideProcessingState]);
 
     const shouldCompactImages = useMemo(() => {
       return currentMessageFiles.length > 1;
@@ -747,7 +762,18 @@ const AppInputBar = React.memo(
                 : "opacity-0 p-0 overflow-hidden pointer-events-none"
             )}
           >
-            <div ref={filesContentRef} className="flex flex-wrap gap-1">
+            <div ref={filesContentRef} className="flex flex-col gap-1">
+              {backgroundChatReadyFiles.length > 0 && (
+                <div className="flex items-center gap-2 rounded-08 bg-status-success-00 px-2 py-1">
+                  <span className="h-2 w-2 rounded-full bg-status-success-02" />
+                  <Text as="p" secondaryBody className="text-status-success-05">
+                    {backgroundChatReadyFiles.length === 1
+                      ? "This file is ready for chat now. Search indexing can finish in the background."
+                      : "These files are ready for chat now. Search indexing can finish in the background."}
+                  </Text>
+                </div>
+              )}
+              <div className="flex flex-wrap gap-1">
               {currentMessageFiles.map((file) => (
                 <FileCard
                   key={file.id}
@@ -758,6 +784,7 @@ const AppInputBar = React.memo(
                   compactImages={shouldCompactImages}
                 />
               ))}
+              </div>
             </div>
           </div>
 

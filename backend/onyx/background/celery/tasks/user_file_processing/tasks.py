@@ -290,6 +290,53 @@ def check_user_file_processing(self: Task, *, tenant_id: str) -> None:
     return None
 
 
+def _extract_and_store_plaintext_for_indexing(
+    uf: UserFile,
+    documents: list[Document],
+    db_session: Session,
+) -> None:
+    """Phase 1 of vector-DB processing: extract text and mark the file usable immediately.
+
+    Stores plaintext and a preliminary token count so the file can be injected
+    into LLM context while the slower embedding + Vespa indexing pipeline runs
+    in the background (Phase 2 = _process_user_file_with_indexing).
+
+    Sets status to INDEXING rather than COMPLETED — the file is usable but RAG
+    search over it won't work until Phase 2 finishes.
+    """
+    from onyx.llm.factory import get_default_llm
+    from onyx.llm.factory import get_llm_tokenizer_encode_func
+
+    combined_text = " ".join(
+        section.text for doc in documents for section in doc.sections if section.text
+    )
+
+    try:
+        llm = get_default_llm()
+        encode = get_llm_tokenizer_encode_func(llm)
+        token_count: int | None = len(encode(combined_text))
+    except Exception:
+        task_logger.warning(
+            f"_extract_and_store_plaintext_for_indexing - Failed to compute token count for {uf.id}, falling back to None"
+        )
+        token_count = None
+
+    store_user_file_plaintext(
+        user_file_id=uf.id,
+        plaintext_content=combined_text,
+    )
+
+    if uf.status != UserFileStatus.DELETING:
+        uf.status = UserFileStatus.INDEXING
+    uf.token_count = token_count
+    db_session.add(uf)
+    db_session.commit()
+
+    task_logger.info(
+        f"_extract_and_store_plaintext_for_indexing - Completed id={uf.id} tokens={token_count}"
+    )
+
+
 def _process_user_file_without_vector_db(
     uf: UserFile,
     documents: list[Document],
@@ -479,15 +526,18 @@ def process_user_file_impl(
                         db_session=db_session,
                     )
                 else:
-                    _process_user_file_with_indexing(
+                    # Phase 1: Extract text immediately — makes the file usable in
+                    # LLM context without waiting for the full embedding + Vespa
+                    # indexing pipeline.  Sets status=INDEXING so the UI can show
+                    # a "still indexing" indicator while Phase 2 runs.
+                    _extract_and_store_plaintext_for_indexing(
                         uf=uf,
-                        user_file_id=user_file_id,
                         documents=documents,
-                        tenant_id=tenant_id,
                         db_session=db_session,
                     )
 
             except Exception as e:
+                # Phase 1 (or document extraction) failed — file is not usable.
                 task_logger.exception(
                     f"process_user_file_impl - Error processing file id={user_file_id} - {e.__class__.__name__}"
                 )
@@ -500,6 +550,33 @@ def process_user_file_impl(
                     db_session.add(uf)
                     db_session.commit()
                 return
+
+        # Phase 2: Full vector indexing for RAG (slower).
+        # Runs outside the Phase 1 try-except so a failure here (e.g. embedding
+        # model server not running) does NOT mark the file as FAILED — Phase 1
+        # already succeeded so the file is usable via direct text injection.
+        # post_index() in the adapter sets status=COMPLETED on success.
+        if not DISABLE_VECTOR_DB and documents:
+            try:
+                with get_session_with_current_tenant() as db_session:
+                    uf2 = db_session.get(UserFile, _as_uuid(user_file_id))
+                    if uf2 and uf2.status not in (
+                        UserFileStatus.DELETING,
+                        UserFileStatus.COMPLETED,
+                    ):
+                        _process_user_file_with_indexing(
+                            uf=uf2,
+                            user_file_id=user_file_id,
+                            documents=documents,
+                            tenant_id=tenant_id,
+                            db_session=db_session,
+                        )
+            except Exception as e:
+                task_logger.warning(
+                    f"process_user_file_impl - Phase 2 (vector indexing) failed for "
+                    f"id={user_file_id}: {e.__class__.__name__}. File remains usable "
+                    f"via text injection (INDEXING status)."
+                )
 
         elapsed = time.monotonic() - start
         task_logger.info(

@@ -1,9 +1,13 @@
-"""Tests for chat_utils.py, specifically get_custom_agent_prompt."""
+"""Tests for chat_utils.py."""
 
+from io import BytesIO
 from unittest.mock import MagicMock
+from unittest.mock import patch
 
 from onyx.chat.chat_utils import _build_tool_call_response_history_message
 from onyx.chat.chat_utils import get_custom_agent_prompt
+from onyx.chat.chat_utils import load_chat_file
+from onyx.file_store.models import ChatFileType
 from onyx.configs.constants import DEFAULT_PERSONA_ID
 from onyx.prompts.chat_prompts import TOOL_CALL_RESPONSE_CROSS_MESSAGE
 
@@ -170,3 +174,38 @@ class TestBuildToolCallResponseHistoryMessage:
             tool_call_response='{"raw":"value"}',
         )
         assert message == TOOL_CALL_RESPONSE_CROSS_MESSAGE
+
+
+class TestLoadChatFile:
+    @patch("onyx.chat.chat_utils.extract_file_text")
+    @patch("onyx.chat.chat_utils.get_default_file_store")
+    def test_text_file_rewinds_before_extraction(
+        self,
+        mock_get_default_file_store: MagicMock,
+        mock_extract_file_text: MagicMock,
+    ) -> None:
+        file_bytes = b"hello from upload"
+        file_stream = BytesIO(file_bytes)
+
+        file_store = MagicMock()
+        file_store.read_file.return_value = file_stream
+        mock_get_default_file_store.return_value = file_store
+
+        mock_extract_file_text.side_effect = (
+            lambda file, file_name, break_on_unprocessable: file.read().decode()
+        )
+
+        db_session = MagicMock()
+        db_session.query.return_value.filter.return_value.first.return_value = None
+
+        loaded_file = load_chat_file(
+            {
+                "id": "file-record-id",
+                "type": ChatFileType.PLAIN_TEXT,
+                "name": "notes.txt",
+            },
+            db_session,
+        )
+
+        assert loaded_file.content == file_bytes
+        assert loaded_file.content_text == "hello from upload"

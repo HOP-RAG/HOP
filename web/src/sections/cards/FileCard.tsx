@@ -5,6 +5,7 @@ import type { ProjectFile } from "@/app/app/projects/projectsService";
 import { UserFileStatus } from "@/app/app/projects/projectsService";
 import { cn, isImageFile } from "@/lib/utils";
 import SimpleLoader from "@/refresh-components/loaders/SimpleLoader";
+import Text from "@/refresh-components/texts/Text";
 import { SvgFileText, SvgX } from "@opal/icons";
 import { Interactive } from "@opal/core";
 import { AttachmentItemLayout } from "@/layouts/general-layouts";
@@ -53,6 +54,8 @@ interface ImageFileCardProps {
   removeFile?: (fileId: string) => void;
   onFileClick?: (file: ProjectFile) => void;
   isProcessing?: boolean;
+  isReadyForChat?: boolean;
+  showBackgroundProcessing?: boolean;
   compact?: boolean;
 }
 function ImageFileCard({
@@ -61,6 +64,8 @@ function ImageFileCard({
   removeFile,
   onFileClick,
   isProcessing = false,
+  isReadyForChat = false,
+  showBackgroundProcessing = false,
   compact = false,
 }: ImageFileCardProps) {
   const sizeClass = compact ? "h-11 w-11" : "h-20 w-20";
@@ -78,9 +83,13 @@ function ImageFileCard({
     >
       <div
         className={cn(
+          "relative",
           sizeClass,
           "rounded-08 border border-border-01",
           isProcessing && "bg-background-neutral-02",
+          isReadyForChat &&
+            showBackgroundProcessing &&
+            "border-status-success-02 shadow-[inset_0_0_0_1px_var(--status-success-02)]",
           onFileClick && !isProcessing && "cursor-pointer hover:opacity-90"
         )}
         onClick={() => {
@@ -105,6 +114,13 @@ function ImageFileCard({
             onError={() => setImgError(true)}
           />
         )}
+        {isReadyForChat && (
+          <div className="absolute left-1 bottom-1 rounded-full bg-background-neutral-inverted-01/90 px-1.5 py-0.5">
+            <Text as="span" secondaryBody className="text-text-inverted-05">
+              {showBackgroundProcessing ? "Chat ready" : "Ready"}
+            </Text>
+          </div>
+        )}
       </div>
     </Removable>
   );
@@ -124,15 +140,6 @@ export function FileCard({
   onFileClick,
   compactImages = false,
 }: FileCardProps) {
-  const typeLabel = useMemo(() => {
-    const name = String(file.name || "");
-    const lastDotIndex = name.lastIndexOf(".");
-    if (lastDotIndex <= 0 || lastDotIndex === name.length - 1) {
-      return "";
-    }
-    return name.slice(lastDotIndex + 1).toUpperCase();
-  }, [file.name]);
-
   const isImage = useMemo(() => {
     return isImageFile(file.name);
   }, [file.name]);
@@ -144,14 +151,50 @@ export function FileCard({
     return null;
   }, [isImage, file.file_id]);
 
-  const isActuallyProcessing =
-    String(file.status) === UserFileStatus.UPLOADING ||
-    String(file.status) === UserFileStatus.PROCESSING;
+  const isUploading = String(file.status) === UserFileStatus.UPLOADING;
+  const isFailed = String(file.status) === UserFileStatus.FAILED;
+  // PROCESSING = backend post-upload work; INDEXING = slower RAG vector indexing.
+  // When hideProcessingState is true, the file still fits in prompt context so it
+  // is already usable in chat while the background work continues.
+  const isExtracting = String(file.status) === UserFileStatus.PROCESSING;
+  const isVectorIndexing = String(file.status) === UserFileStatus.INDEXING;
+  const isReadyForChat = !isUploading && !isFailed && !file.temp_id;
+  const showBackgroundProcessing =
+    hideProcessingState && (isExtracting || isVectorIndexing);
+  const isProcessing =
+    isUploading ||
+    ((!hideProcessingState || !isReadyForChat) &&
+      (isExtracting || isVectorIndexing));
 
-  // When hideProcessingState is true, we treat processing files as completed for display purposes
-  const isProcessing = hideProcessingState ? false : isActuallyProcessing;
+  const doneUploading = !isUploading;
 
-  const doneUploading = String(file.status) !== UserFileStatus.UPLOADING;
+  const statusText = useMemo(() => {
+    if (isUploading) {
+      return "Uploading...";
+    }
+    if (isFailed) {
+      return "Upload failed";
+    }
+    if (showBackgroundProcessing) {
+      return isVectorIndexing
+        ? "Ready for chat • Indexing for search..."
+        : "Ready for chat • Finishing setup...";
+    }
+    if (isProcessing) {
+      return isVectorIndexing ? "Indexing for search..." : "Preparing for chat...";
+    }
+    if (isReadyForChat) {
+      return "Ready for chat";
+    }
+    return "Queued";
+  }, [
+    isUploading,
+    isFailed,
+    showBackgroundProcessing,
+    isVectorIndexing,
+    isProcessing,
+    isReadyForChat,
+  ]);
 
   // For images, always show the larger preview layout (even while processing)
   if (isImage) {
@@ -162,6 +205,8 @@ export function FileCard({
         removeFile={removeFile}
         onFileClick={onFileClick}
         isProcessing={isProcessing}
+        isReadyForChat={isReadyForChat}
+        showBackgroundProcessing={showBackgroundProcessing}
         compact={compactImages}
       />
     );
@@ -174,18 +219,19 @@ export function FileCard({
       }
     >
       <div className="min-w-0 max-w-[12rem]">
-        <Interactive.Container border heightVariant="fit">
+        <Interactive.Container
+          border
+          heightVariant="fit"
+          className={cn(
+            showBackgroundProcessing && "border-status-success-02 bg-status-success-00",
+            isFailed && "border-status-error-02"
+          )}
+        >
           <div className="[&_.opal-content-md-body]:min-w-0 [&_.opal-content-md-title]:break-all">
             <AttachmentItemLayout
               icon={isProcessing ? SimpleLoader : SvgFileText}
               title={file.name}
-              description={
-                isProcessing
-                  ? file.status === UserFileStatus.UPLOADING
-                    ? "Uploading..."
-                    : "Processing..."
-                  : typeLabel
-              }
+              description={statusText}
             />
           </div>
           <Spacer horizontal rem={0.5} />
