@@ -218,14 +218,14 @@ export function FileCard({
         removeFile && doneUploading ? () => removeFile(file.id) : undefined
       }
     >
-      <div className="min-w-0 max-w-[12rem]">
+      <div className={cn(
+          "min-w-0 max-w-[12rem] rounded-08",
+          showBackgroundProcessing && "border border-status-success-02 bg-status-success-00",
+          isFailed && "border border-status-error-02"
+        )}>
         <Interactive.Container
           border
           heightVariant="fit"
-          className={cn(
-            showBackgroundProcessing && "border-status-success-02 bg-status-success-00",
-            isFailed && "border-status-error-02"
-          )}
         >
           <div className="[&_.opal-content-md-body]:min-w-0 [&_.opal-content-md-title]:break-all">
             <AttachmentItemLayout
