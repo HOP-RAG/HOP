@@ -393,7 +393,10 @@ export function ProjectsProvider({ children }: ProjectsProviderProps) {
             prev.map((f) => {
               if (f.temp_id) {
                 const u = tempIdToUploadedFileMap.get(f.temp_id);
-                return u ? { ...f, ...u } : f;
+                // Clear temp_id so isReadyForChat becomes true immediately —
+                // the file is usable in chat as soon as the upload HTTP request
+                // returns, regardless of whether Celery has started processing.
+                return u ? { ...f, ...u, temp_id: undefined } : f;
               }
               return f;
             })
