@@ -481,15 +481,23 @@ def delete_user_file(
     else:
         from onyx.background.celery.versioned_apps.client import app as client_app
 
-        task = client_app.send_task(
-            OnyxCeleryTask.DELETE_SINGLE_USER_FILE,
-            kwargs={"user_file_id": str(user_file.id), "tenant_id": tenant_id},
-            queue=OnyxCeleryQueues.USER_FILE_DELETE,
-            priority=OnyxCeleryPriority.HIGH,
-        )
-        logger.info(
-            f"Triggered delete for user_file_id={user_file.id} with task_id={task.id}"
-        )
+        try:
+            task = client_app.send_task(
+                OnyxCeleryTask.DELETE_SINGLE_USER_FILE,
+                kwargs={"user_file_id": str(user_file.id), "tenant_id": tenant_id},
+                queue=OnyxCeleryQueues.USER_FILE_DELETE,
+                priority=OnyxCeleryPriority.HIGH,
+            )
+            logger.info(
+                f"Triggered delete for user_file_id={user_file.id} with task_id={task.id}"
+            )
+        except Exception:
+            # Redis/broker temporarily unavailable — file is already marked DELETING
+            # in the DB. The beat task check_for_user_file_delete will pick it up.
+            logger.warning(
+                f"Failed to enqueue delete task for user_file_id={user_file.id}; "
+                f"beat task will retry automatically."
+            )
 
     return UserFileDeleteResult(
         has_associations=False, project_names=[], assistant_names=[]
