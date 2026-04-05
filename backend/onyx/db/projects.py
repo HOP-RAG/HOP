@@ -139,15 +139,24 @@ def upload_files_to_user_files_with_indexing(
         from onyx.background.celery.versioned_apps.client import app as client_app
 
         for user_file in user_files:
-            task = client_app.send_task(
-                OnyxCeleryTask.PROCESS_SINGLE_USER_FILE,
-                kwargs={"user_file_id": user_file.id, "tenant_id": tenant_id},
-                queue=OnyxCeleryQueues.USER_FILE_PROCESSING,
-                priority=OnyxCeleryPriority.HIGH,
-            )
-            logger.info(
-                f"Triggered indexing for user_file_id={user_file.id} with task_id={task.id}"
-            )
+            try:
+                task = client_app.send_task(
+                    OnyxCeleryTask.PROCESS_SINGLE_USER_FILE,
+                    kwargs={"user_file_id": user_file.id, "tenant_id": tenant_id},
+                    queue=OnyxCeleryQueues.USER_FILE_PROCESSING,
+                    priority=OnyxCeleryPriority.HIGH,
+                )
+                logger.info(
+                    f"Triggered indexing for user_file_id={user_file.id} with task_id={task.id}"
+                )
+            except Exception:
+                # Redis/broker temporarily unavailable — the file is already persisted
+                # in PROCESSING status. The beat task check_user_file_processing will
+                # pick it up and re-enqueue within ~15s.
+                logger.warning(
+                    f"Failed to enqueue processing task for user_file_id={user_file.id}; "
+                    f"beat task will retry automatically."
+                )
 
     return CategorizedFilesResult(
         user_files=user_files,
