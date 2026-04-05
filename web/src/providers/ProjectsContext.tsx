@@ -636,6 +636,14 @@ export function ProjectsProvider({ children }: ProjectsProviderProps) {
           const map = new Map(prev.map((f) => [f.id, f]));
           for (const latest of statuses) {
             const id = latest.id;
+            // If the file is being deleted, remove it rather than updating it
+            if (String(latest.status).toLowerCase() === "deleting") {
+              if (map.has(id)) {
+                map.delete(id);
+                changed = true;
+              }
+              continue;
+            }
             if (map.has(id)) {
               const prevVal = map.get(id)!;
               if (
