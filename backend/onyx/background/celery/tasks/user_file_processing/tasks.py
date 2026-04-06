@@ -451,8 +451,11 @@ def _process_user_file_with_indexing(
         task_logger.error(
             f"_process_user_file_with_indexing - Indexing pipeline failed id={user_file_id}"
         )
-        if uf.status != UserFileStatus.DELETING:
-            uf.status = UserFileStatus.FAILED
+        # Leave status as INDEXING rather than FAILED — Phase 1 (text extraction)
+        # already succeeded so the file is usable in chat via direct text
+        # injection.  Only vector-based RAG search is unavailable.
+        if uf.status not in (UserFileStatus.DELETING, UserFileStatus.INDEXING):
+            uf.status = UserFileStatus.INDEXING
             db_session.add(uf)
             db_session.commit()
         raise RuntimeError(f"Indexing pipeline failed for user file {user_file_id}")
