@@ -5,7 +5,10 @@
     <allow
         until="{{ until_date }}"
         comment="We need to be able to update the schema for updates to the Onyx schema">indexing-change</allow>
-    <allow 
+    <allow
         until="{{ until_date }}"
         comment="Prevents old alt indices from interfering with changes">field-type-change</allow>
+    <allow
+        until="{{ until_date }}"
+        comment="Allow renaming content clusters (e.g. danswer_index -> onyx_index) without blocking deployment">content-cluster-removal</allow>
 </validation-overrides>
