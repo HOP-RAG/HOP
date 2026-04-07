@@ -24,10 +24,10 @@ scrape_configs:
     static_configs:
       - targets: ["redis-exporter:9121"]
 
-  # Celery exporter (#85)
-  - job_name: celery
-    static_configs:
-      - targets: ["celery-exporter:9808"]
+  # Celery exporter disabled — see docker-compose.prod.yml comment
+  # - job_name: celery
+  #   static_configs:
+  #     - targets: ["celery-exporter:9808"]
 
   # FastAPI /metrics endpoint (#86)
   - job_name: fastapi

@@ -586,29 +586,35 @@ services:
         max-size: "50m"
         max-file: "6"
 
-  celery-exporter:
-    image: ghcr.io/danihodovic/celery-exporter:latest
-    restart: unless-stopped
-    depends_on:
-      - cache
-    deploy:
-      resources:
-        limits:
-          cpus: '0.25'
-          memory: 128M
-        reservations:
-          cpus: '0.10'
-          memory: 32M
-    environment:
-      - CE_BROKER_URL=${CELERY_EXPORTER_BROKER_URL:-redis://cache:6379/${REDIS_DB_NUMBER_CELERY:-15}}
-      - CE_RETRY_INTERVAL=5
-    expose:
-      - "9808"
-    logging:
-      driver: json-file
-      options:
-        max-size: "50m"
-        max-file: "6"
+  # celery-exporter is disabled because it continuously sends inspect commands
+  # via the Celery pidbox control channel. Combined with CELERY_SEPARATOR=":"
+  # in our Celery config, this causes kombu to write malformed pidbox binding
+  # entries that crash workers with:
+  #   ValueError: not enough values to unpack (expected 3, got 1)
+  # Re-enable only after resolving the separator/pidbox compatibility issue.
+  # celery-exporter:
+  #   image: ghcr.io/danihodovic/celery-exporter:latest
+  #   restart: unless-stopped
+  #   depends_on:
+  #     - cache
+  #   deploy:
+  #     resources:
+  #       limits:
+  #         cpus: '0.25'
+  #         memory: 128M
+  #       reservations:
+  #         cpus: '0.10'
+  #         memory: 32M
+  #   environment:
+  #     - CE_BROKER_URL=${CELERY_EXPORTER_BROKER_URL:-redis://cache:6379/${REDIS_DB_NUMBER_CELERY:-15}}
+  #     - CE_RETRY_INTERVAL=5
+  #   expose:
+  #     - "9808"
+  #   logging:
+  #     driver: json-file
+  #     options:
+  #       max-size: "50m"
+  #       max-file: "6"
 
   dozzle:
     image: amir20/dozzle:latest
