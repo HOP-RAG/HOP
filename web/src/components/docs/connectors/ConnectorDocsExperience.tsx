@@ -172,17 +172,18 @@ export function ConnectorDocsIndexPage() {
   return (
     <div className="connector-docs-shell">
       <div className="connector-docs-frame">
-        <Card className="connector-docs-hero">
+        <Card className="connector-docs-hero connector-docs-index-hero">
           <Section alignItems="start" gap={1.15}>
             <Section
-              flexDirection="row"
-              justifyContent="between"
-              alignItems="start"
-              width="full"
+              alignItems="center"
               gap={1}
-              wrap
+              className="connector-docs-index-hero-header"
             >
-              <Section alignItems="start" gap={0.45}>
+              <Section
+                alignItems="center"
+                gap={0.45}
+                className="connector-docs-index-hero-copy-block"
+              >
                 <Text mainUiAction text04 as="p">
                   {language === "es"
                     ? "Biblioteca de conectores"
@@ -204,8 +205,8 @@ export function ConnectorDocsIndexPage() {
                     : "These pages explain requirements, permissions, exact setup steps, verification, and recovery paths so a team can complete the connection without waiting on support."}
                 </Text>
               </Section>
-              <div className="connector-docs-language">
-                <AppLanguageSelect />
+              <div className="connector-docs-language connector-docs-language--centered">
+                <AppLanguageSelect className="connector-docs-language-select" />
               </div>
             </Section>
 
@@ -274,8 +275,17 @@ export function ConnectorDocsIndexPage() {
             );
 
             return (
-              <Section key={category} alignItems="start" gap={0.7}>
-                <Section alignItems="start" gap={0.25}>
+              <Section
+                key={category}
+                alignItems="start"
+                gap={0.7}
+                className="connector-docs-category-section"
+              >
+                <Section
+                  alignItems="center"
+                  gap={0.25}
+                  className="connector-docs-category-header"
+                >
                   <Text headingH2 as="p">
                     {localize(getSourceCategoryCopy(typedCategory), language)}
                   </Text>
@@ -304,10 +314,11 @@ export function ConnectorDocsIndexPage() {
                           <Section alignItems="start" gap={0.8}>
                             <Section
                               flexDirection="row"
-                              justifyContent="between"
+                              justifyContent="start"
                               alignItems="start"
                               width="full"
                               gap={0.75}
+                              wrap
                             >
                               <div className="connector-docs-source-icon">
                                 <SourceIcon
